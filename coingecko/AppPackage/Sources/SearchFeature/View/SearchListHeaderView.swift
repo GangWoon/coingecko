@@ -22,25 +22,13 @@ final class SearchListHeaderView: UITableViewHeaderFooterView {
     
     let buttonList = buttonStates
       .enumerated()
-      .map { [weak self] (index, state) in
-        let button = UIButton(
-          configuration: .bordered(),
-          primaryAction: .init { _ in
-            self?.selected.send(state)
-            state.action()
-          }
+      .map { (index, state) in
+        let button = buildButton(
+          index: index,
+          state: state,
+          isSelected: index == selectedItem
         )
-        self?.buildButtonConfiguration(
-          button: button,
-          title: state.title
-        )
-        if
-          let selectedItem,
-          buttonStates.indices.contains(selectedItem),
-          index == selectedItem
-        {
-          button.isSelected = true
-        }
+        
         return button
       }
     
@@ -57,6 +45,29 @@ final class SearchListHeaderView: UITableViewHeaderFooterView {
       buttonList: buttonList,
       selectedItem: selectedItem
     )
+  }
+  
+  private func buildButton(
+    index: Int,
+    state: ButtonState,
+    isSelected: Bool
+  ) -> UIButton {
+    let button = UIButton(
+      configuration: .bordered(),
+      primaryAction: .init { [weak self] _ in
+        self?.selected.send(state)
+        state.action()
+      }
+    )
+    buildButtonConfiguration(
+      button: button,
+      title: state.title
+    )
+    if isSelected {
+      button.isSelected = true
+    }
+    
+    return button
   }
   
   private func buildButtonConfiguration(button: UIButton, title: String) {
@@ -86,6 +97,10 @@ final class SearchListHeaderView: UITableViewHeaderFooterView {
           buttonList[index].isSelected = false
         }
         if let new, let index = buttonStates.firstIndex(of: new) {
+          if new == old {
+            buttonList[index].isSelected.toggle()
+            return
+          }
           subject?.send(index)
         }
       }
