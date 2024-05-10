@@ -9,9 +9,10 @@ let package = Package(
       name: "AppFeature",
       targets: ["AppFeature"]),
   ],
-//  dependencies: [
-//    .package(path: "../HTTPInterface")
-//  ],
+  dependencies: [
+    .package(path: "../HTTPInterface"),
+    .package(path: "../ViewHelper")
+  ],
   targets: [
     .target(
       name: "AppFeature"
