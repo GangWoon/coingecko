@@ -2,15 +2,15 @@
 import PackageDescription
 
 let package = Package(
-  name: "VIewHelper",
+  name: "ViewHelper",
   platforms: [.iOS(.v15)],
   products: [
     .library(
-      name: "VIewHelper",
-      targets: ["VIewHelper"]),
+      name: "ViewHelper",
+      targets: ["ViewHelper"]),
   ],
   targets: [
     .target(
-      name: "VIewHelper"),
+      name: "ViewHelper"),
   ]
 )

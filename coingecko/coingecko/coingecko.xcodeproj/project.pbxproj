@@ -11,7 +11,6 @@
 		AEE1C1712BEDE05D00966005 /* Base in Resources */ = {isa = PBXBuildFile; fileRef = AEE1C1702BEDE05D00966005 /* Base */; };
 		AEE1C1812BEDE91100966005 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = AEE1C1802BEDE91100966005 /* main.swift */; };
 		AEE1C1842BEDEC0B00966005 /* AppFeature in Frameworks */ = {isa = PBXBuildFile; productRef = AEE1C1832BEDEC0B00966005 /* AppFeature */; };
-		AEE1C1862BEDEC0E00966005 /* HttpInterface in Frameworks */ = {isa = PBXBuildFile; productRef = AEE1C1852BEDEC0E00966005 /* HttpInterface */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -28,7 +27,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				AEE1C1862BEDEC0E00966005 /* HttpInterface in Frameworks */,
 				AEE1C1842BEDEC0B00966005 /* AppFeature in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -90,7 +88,6 @@
 			name = coingecko;
 			packageProductDependencies = (
 				AEE1C1832BEDEC0B00966005 /* AppFeature */,
-				AEE1C1852BEDEC0E00966005 /* HttpInterface */,
 			);
 			productName = coingecko;
 			productReference = AEE1C1612BEDE05C00966005 /* coingecko.app */;
@@ -378,11 +375,6 @@
 		AEE1C1832BEDEC0B00966005 /* AppFeature */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = AppFeature;
-		};
-		AEE1C1852BEDEC0E00966005 /* HttpInterface */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = AEE1C17D2BEDE88300966005 /* XCLocalSwiftPackageReference "../HttpInterface" */;
-			productName = HttpInterface;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

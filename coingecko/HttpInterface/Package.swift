@@ -2,12 +2,12 @@
 import PackageDescription
 
 let package = Package(
-  name: "HttpInterface",
+  name: "HTTPInterface",
   platforms: [.iOS(.v13)],
   products: [
     .library(
-      name: "HttpInterface",
-      targets: ["HttpInterface"]
+      name: "HTTPInterface",
+      targets: ["HTTPInterface"]
     ),
   ],
   dependencies: [
@@ -15,7 +15,7 @@ let package = Package(
   ],
   targets: [
     .target(
-      name: "HttpInterface",
+      name: "HTTPInterface",
       dependencies: [
         .product(name: "HTTPTypes", package: "swift-http-types")
       ]

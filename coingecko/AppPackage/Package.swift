@@ -15,7 +15,18 @@ let package = Package(
   ],
   targets: [
     .target(
-      name: "AppFeature"
+      name: "AppFeature",
+      dependencies: [
+        "SearchFeature"
+      ]
+    ),
+    .target(
+      name: "SearchFeature",
+      dependencies: [
+        "CombineExt",
+        "HTTPInterface",
+        "ViewHelper"
+      ]
     ),
     .target(name: "CombineExt"),
     .testTarget(
