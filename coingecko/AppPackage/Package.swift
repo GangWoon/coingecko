@@ -3,6 +3,7 @@ import PackageDescription
 
 let package = Package(
   name: "AppPackage",
+  platforms: [.iOS(.v15)],
   products: [
     .library(
       name: "AppFeature",
@@ -15,6 +16,7 @@ let package = Package(
     .target(
       name: "AppFeature"
     ),
+    .target(name: "CombineExt"),
     .testTarget(
       name: "AppPackageTests",
       dependencies: ["AppFeature"]),
