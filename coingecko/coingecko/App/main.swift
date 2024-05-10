@@ -1,0 +1,3 @@
+import AppFeature
+
+AppDelegate.main()
