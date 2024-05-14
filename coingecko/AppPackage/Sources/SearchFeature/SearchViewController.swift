@@ -3,10 +3,12 @@ import Combine
 import UIKit
 
 public final class SearchViewController: UIViewController {
+  let viewModel: SearchViewModel
   private var datasource: UITableViewDiffableDataSource<SectionType, CoinData>!
   private var cancellables: Set<AnyCancellable> = []
   
-  public init() {
+  public init(viewModel: SearchViewModel) {
+    self.viewModel = viewModel
     super.init(nibName: nil, bundle: nil)
   }
   
@@ -18,6 +20,11 @@ public final class SearchViewController: UIViewController {
   public override func viewDidLoad() {
     super.viewDidLoad()
     build()
+  }
+  
+  public override func viewWillAppear(_ animated: Bool) {
+    super.viewWillAppear(animated)
+    viewModel.send(.viewWillAppear)
   }
   
   private func build() {
@@ -37,6 +44,7 @@ public final class SearchViewController: UIViewController {
     ])
     let action = UIAction { [weak self] action in
       if let textField = action.sender as? UITextField {
+        self?.viewModel.send(.searchFieldChanged(textField.text))
       }
     }
     textField.addAction(action, for: .valueChanged)
@@ -133,7 +141,15 @@ extension SearchViewController: UITableViewDelegate {
 #if DEBUG
 @available(iOS 17.0, *)
 #Preview {
-  let vc = SearchViewController()
+  let vc = SearchViewController(
+    viewModel: .init(
+      state: .init(),
+      enviornment: .init(
+        loadSearchHistory: { [] },
+        saveSearchHistory: { }
+      )
+    )
+  )
   return vc
 }
 #endif
