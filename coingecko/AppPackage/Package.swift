@@ -28,6 +28,12 @@ let package = Package(
         "ViewHelper"
       ]
     ),
+    .target(
+      name: "APIClient",
+      dependencies: [
+        "HTTPInterface"
+      ]
+    ),
     .target(name: "CombineExt"),
     .testTarget(
       name: "AppPackageTests",
