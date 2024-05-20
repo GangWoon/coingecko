@@ -76,7 +76,7 @@ public struct UniversalClient: Sendable {
     } mapError: { error in
       makeError(error: error)
     }
-    var next: @Sendable (HTTPRequest, Data?, URL) async throws -> (HTTPResponse, Data?) = { _request, _body, _url in
+    var next: @Sendable (HTTPRequest, Data?, URL) async throws -> (HTTPResponse, Data) = { _request, _body, _url in
       try await wrappingError {
         try await transport.send(_request, body: _body, baseURL: _url)
       } mapError: { error in

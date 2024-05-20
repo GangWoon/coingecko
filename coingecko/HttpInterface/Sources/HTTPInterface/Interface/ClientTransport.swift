@@ -8,7 +8,7 @@ public protocol ClientTransport: Sendable {
     _ request: HTTPRequest,
     body: Data?,
     baseURL: URL
-  ) async throws -> (HTTPResponse, Data?)
+  ) async throws -> (HTTPResponse, Data)
 }
 
 public protocol ClientMiddleware: Sendable {
@@ -16,6 +16,6 @@ public protocol ClientMiddleware: Sendable {
     _ request: HTTPRequest,
     body: Data?,
     baseURL: URL,
-    next: (HTTPRequest, Data?, URL) async throws -> (HTTPResponse, Data?)
-  ) async throws -> (HTTPResponse, Data?)
+    next: (HTTPRequest, Data?, URL) async throws -> (HTTPResponse, Data)
+  ) async throws -> (HTTPResponse, Data)
 }

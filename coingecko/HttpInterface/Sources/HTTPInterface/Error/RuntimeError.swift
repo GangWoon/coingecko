@@ -17,7 +17,7 @@ public enum RuntimeError: Error, CustomStringConvertible, LocalizedError {
     }
   }
   
-  var underlyingError: (any Error)? {
+  public var underlyingError: (any Error)? {
     switch self {
     case
         .transportFailed(let error),
