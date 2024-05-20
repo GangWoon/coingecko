@@ -11,7 +11,7 @@ let package = Package(
   ],
   dependencies: [
     .package(path: "../HTTPInterface"),
-    .package(path: "../ViewHelper")
+    .package(path: "../ViewHelper"),
   ],
   targets: [
     .target(
@@ -25,7 +25,8 @@ let package = Package(
       dependencies: [
         "CombineExt",
         "HTTPInterface",
-        "ViewHelper"
+        "ViewHelper",
+        "APIClient"
       ]
     ),
     .target(
