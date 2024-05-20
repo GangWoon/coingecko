@@ -7,10 +7,11 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		AEA461E62BFB0B5300547E8A /* AppFeature in Frameworks */ = {isa = PBXBuildFile; productRef = AEA461E52BFB0B5300547E8A /* AppFeature */; };
+		AEA461E82BFB0B6500547E8A /* HTTPInterface in Frameworks */ = {isa = PBXBuildFile; productRef = AEA461E72BFB0B6500547E8A /* HTTPInterface */; };
 		AEE1C16E2BEDE05D00966005 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AEE1C16D2BEDE05D00966005 /* Assets.xcassets */; };
 		AEE1C1712BEDE05D00966005 /* Base in Resources */ = {isa = PBXBuildFile; fileRef = AEE1C1702BEDE05D00966005 /* Base */; };
 		AEE1C1812BEDE91100966005 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = AEE1C1802BEDE91100966005 /* main.swift */; };
-		AEE1C1842BEDEC0B00966005 /* AppFeature in Frameworks */ = {isa = PBXBuildFile; productRef = AEE1C1832BEDEC0B00966005 /* AppFeature */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -27,7 +28,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				AEE1C1842BEDEC0B00966005 /* AppFeature in Frameworks */,
+				AEA461E82BFB0B6500547E8A /* HTTPInterface in Frameworks */,
+				AEA461E62BFB0B5300547E8A /* AppFeature in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -87,7 +89,8 @@
 			);
 			name = coingecko;
 			packageProductDependencies = (
-				AEE1C1832BEDEC0B00966005 /* AppFeature */,
+				AEA461E52BFB0B5300547E8A /* AppFeature */,
+				AEA461E72BFB0B6500547E8A /* HTTPInterface */,
 			);
 			productName = coingecko;
 			productReference = AEE1C1612BEDE05C00966005 /* coingecko.app */;
@@ -372,9 +375,14 @@
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		AEE1C1832BEDEC0B00966005 /* AppFeature */ = {
+		AEA461E52BFB0B5300547E8A /* AppFeature */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = AppFeature;
+		};
+		AEA461E72BFB0B6500547E8A /* HTTPInterface */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AEE1C17D2BEDE88300966005 /* XCLocalSwiftPackageReference "../HttpInterface" */;
+			productName = HTTPInterface;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
