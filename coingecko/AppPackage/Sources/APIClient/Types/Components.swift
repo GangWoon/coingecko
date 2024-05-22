@@ -5,18 +5,18 @@ public enum Components {
     public struct Trending: Codable, Sendable {
       public var coins: [Coin]
       public struct Coin: Sendable, Codable {
-        var id: String
-        var coinId: Int
-        var name: String
-        var symbol: String
-        var marketCapRank: Int
-        var thumb: String
-        var small: String
-        var large: String
-        var slug: String
-        var priceBtc: Double
-        var score: Int
-        var data: ItemData
+        public var id: String
+        public var coinId: Int
+        public var name: String
+        public var symbol: String
+        public var marketCapRank: Int
+        public var thumb: String
+        public var small: String
+        public var large: String
+        public var slug: String
+        public var priceBtc: Double
+        public var score: Int
+        public var data: ItemData
         
         enum CodingKeys: String, CodingKey {
           case item
@@ -64,57 +64,57 @@ public enum Components {
         }
       }
       public struct ItemData: Sendable, Codable {
-        var price: Double
-        var priceBtc: String
-        var priceChangePercentage24H: [String: Double]
-        var marketCap: String
-        var marketCapBtc: String
-        var totalVolume: String
-        var totalVolumeBtc: String
-        var sparkline: String
-        var content: Content?
+        public var price: Double
+        public var priceBtc: String
+        public var priceChangePercentage24H: [String: Double]
+        public var marketCap: String
+        public var marketCapBtc: String
+        public var totalVolume: String
+        public var totalVolumeBtc: String
+        public var sparkline: String
+        public var content: Content?
       }
       public struct Content: Sendable, Codable {
-        var title: String
-        var description: String
+        public var title: String
+        public var description: String
       }
       
       public var nfts: [NFT]
       public struct NFT: Sendable, Codable {
-        var id: String
-        var name: String
-        var symbol: String
-        var thumb: String
-        var nftContractId: Int
-        var nativeCurrencySymbol: String
-        var floorPriceInNativeCurrency: Double
-        var floorPrice24HPercentageChange: Double
-        var data: NftData
+        public var id: String
+        public var name: String
+        public var symbol: String
+        public var thumb: String
+        public var nftContractId: Int
+        public var nativeCurrencySymbol: String
+        public var floorPriceInNativeCurrency: Double
+        public var floorPrice24HPercentageChange: Double
+        public var data: NftData
       }
       public struct NftData: Sendable, Codable {
-        var floorPrice: String
-        var floorPriceInUsd24HPercentageChange: String
-        var h24Volume: String
-        var h24AverageSalePrice: String
-        var sparkline: String
+        public var floorPrice: String
+        public var floorPriceInUsd24HPercentageChange: String
+        public var h24Volume: String
+        public var h24AverageSalePrice: String
+        public var sparkline: String
       }
       public var categories: [Category]
       public struct Category: Sendable, Codable {
-        var id: Int
-        var name: String
-        var marketCap1HChange: Double
-        var slug: String
-        var coinsCount: Int
-        var data: CategoryData
+        public var id: Int
+        public var name: String
+        public var marketCap1HChange: Double
+        public var slug: String
+        public var coinsCount: Int
+        public var data: CategoryData
       }
       
       public struct CategoryData: Sendable, Codable {
-        var marketCap: Double
-        var marketCapBtc: Double
-        var totalVolume: Double
-        var totalVolumeBtc: Double
-        var marketCapChangePercentage24H: [String: Double]
-        var sparkline: String
+        public var marketCap: Double
+        public var marketCapBtc: Double
+        public var totalVolume: Double
+        public var totalVolumeBtc: Double
+        public var marketCapChangePercentage24H: [String: Double]
+        public var sparkline: String
       }
     }
   }

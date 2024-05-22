@@ -1,3 +1,4 @@
+import SearchFeature
 import UIKit
 
 public class AppDelegate: NSObject, UIApplicationDelegate {
@@ -7,7 +8,19 @@ public class AppDelegate: NSObject, UIApplicationDelegate {
     window = .init()
     let vc = UIViewController()
     vc.view.backgroundColor = .green
-    window?.rootViewController = vc
+    window?.rootViewController = build()
     window?.makeKeyAndVisible()
   }
+  
+  func build() -> UIViewController {
+    let interactor = SearchInteractor()
+    let presenter = SearchPresenter()
+    interactor.presenter = presenter
+    interactor.worker = SearchWorker()
+    let vc = SearchViewController(interactor: interactor)
+    presenter.viewController = vc
+    
+    return vc
+  }
+
 }

@@ -1,15 +1,27 @@
 import ViewHelper
 import UIKit
 
-enum SectionType: Int, CaseIterable {
-  case history = 0
-  case popularity
-  case highlight
+protocol ViewStateRemover {
+  var viewStateRemover: [() -> ()?] { get set }
+  func removeState()
 }
 
-final class SearchListRow: UITableViewCell {
+extension ViewStateRemover {
+  func removeState() {
+    viewStateRemover
+      .forEach { $0() }
+  }
+}
+
+final class SearchListRow: UITableViewCell, ViewStateRemover {
+  var viewStateRemover: [() -> ()?] = []
   
-  func build(type: SectionType, state: State) {
+  override func prepareForReuse() {
+    super.prepareForReuse()
+    removeState()
+  }
+  
+  func build(type: SearchFeature.ViewModel.SectionType, state: State) {
     let stack = UIStackView()
     stack.isLayoutMarginsRelativeArrangement = true
     stack.directionalLayoutMargins = .searchListRow
@@ -21,6 +33,11 @@ final class SearchListRow: UITableViewCell {
     }
     contentView.addSubview(stack)
     stack.equalToParent()
+    
+    let remover = { [weak stack] in
+      stack?.removeFromSuperview()
+    }
+    viewStateRemover.append(remover)
   }
   
   private func buildPrimaryStyle(_ stack: UIStackView, state: State) {

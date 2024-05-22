@@ -2,13 +2,19 @@ import ViewHelper
 import Combine
 import UIKit
 
+public protocol SearchDisplayLogic: AnyObject {
+  func applySnapshot(items: [SearchFeature.ViewModel.SectionType: [SearchFeature.RowData]])
+}
+
 public final class SearchViewController: UIViewController {
-  let viewModel: SearchViewModel
-  private var datasource: UITableViewDiffableDataSource<SectionType, CoinData>!
+  private var searchField: SearchTextField!
+  var interactor: any SearchDataStore & SearchBusinessLogic
+  
+  private var datasource: UITableViewDiffableDataSource<SearchFeature.ViewModel.SectionType, SearchFeature.RowData>!
   private var cancellables: Set<AnyCancellable> = []
   
-  public init(viewModel: SearchViewModel) {
-    self.viewModel = viewModel
+  public init(interactor: any SearchDataStore & SearchBusinessLogic) {
+    self.interactor = interactor
     super.init(nibName: nil, bundle: nil)
   }
   
@@ -24,7 +30,7 @@ public final class SearchViewController: UIViewController {
   
   public override func viewWillAppear(_ animated: Bool) {
     super.viewWillAppear(animated)
-    viewModel.send(.viewWillAppear)
+    interactor.viewWillAppear(.init())
   }
   
   private func build() {
@@ -44,10 +50,11 @@ public final class SearchViewController: UIViewController {
     ])
     let action = UIAction { [weak self] action in
       if let textField = action.sender as? UITextField {
-        self?.viewModel.send(.searchFieldChanged(textField.text))
+        self?.interactor.searchFieldChanged(textField.text)
       }
     }
     textField.addAction(action, for: .valueChanged)
+    searchField = textField
     
     return textField.bottomAnchor
   }
@@ -62,9 +69,9 @@ public final class SearchViewController: UIViewController {
       guard
         let cell = tableView.dequeueReusableCell(type: SearchListRow.self, for: indexPath)
       else { return .init() }
-      let section = SectionType(rawValue: indexPath.section) ?? .highlight
+      let section = SearchFeature.ViewModel.SectionType(rawValue: indexPath.section) ?? .highlight
       cell.build(type: section, state: datum.rowState)
-
+      
       return cell
     })
     tableView.translatesAutoresizingMaskIntoConstraints = false
@@ -76,22 +83,6 @@ public final class SearchViewController: UIViewController {
     ])
     
     view.backgroundColor = tableView.backgroundColor
-    Task {
-      if #available(iOS 16.0, *) {
-        try await Task.sleep(for: .seconds(0.2))
-        var snapShot = NSDiffableDataSourceSnapshot<SectionType, CoinData>()
-        snapShot.appendSections(SectionType.allCases)
-        snapShot.appendItems([.init(rank: 4, imageUrl: "asdfzcxv", name: "asdf", fullname: "zxcv", currentPrice: 42342, priceChange24h: 2.1), .init(rank:6, imageUrl: "asdfzcxv", name: "asdf", fullname: "zxcv", currentPrice: 324, priceChange24h: 4.3), ], toSection: .history)
-        snapShot.appendItems(
-          [.init(rank: 3, imageUrl: "asdfzcxv3", name: "asdf3", fullname: "zxcv3", currentPrice: 133, priceChange24h: 4.6),
-           .init(rank: 523, imageUrl: "asdfzcxv3", name: "asdf3", fullname: "zxcv3", currentPrice: 14235, priceChange24h: 43.2),
-          ], toSection: .popularity)
-        snapShot.appendItems([.init(rank: 2, imageUrl: "asdfzcxv", name: "asdf2", fullname: "zxcv2", currentPrice: 3501, priceChange24h: 2.8)], toSection: .highlight)
-        await datasource.apply(snapShot)
-      } else {
-        // Fallback on earlier versions
-      }
-    }
   }
 }
 extension SearchViewController: UITableViewDelegate {
@@ -99,41 +90,39 @@ extension SearchViewController: UITableViewDelegate {
     _ tableView: UITableView,
     viewForHeaderInSection section: Int
   ) -> UIView? {
-    let section = SectionType(rawValue: section) ?? .history
-    switch section {
+    let sectionType = interactor.sectionList[section]
+    let view = tableView.dequeueReusableHeaderFooterView(type: SearchListHeaderView.self)
+    let selectedIndex = 0
+    view?.build(
+      title: sectionType.title,
+      buttonStates: buildButtonStates(sectionType, section: section),
+      selectedItem: selectedIndex
+    )
+    return view
+  }
+  
+  private func buildButtonStates(
+    _ sectionType: SearchFeature.ViewModel.SectionType,
+    section: Int
+  ) -> [SearchListHeaderView.ButtonState] {
+    let build: ([ListCategoryable]) -> [SearchListHeaderView.ButtonState] = { list in
+      list.enumerated()
+        .map { row, value in
+            .init(
+              title: value.description,
+              action: { [weak self] in
+                self?.interactor.categoryTapped(.init(indexPath: .init(row: row, section: section)))
+              }
+            )
+        }
+    }
+    switch sectionType {
     case .history:
-      let view = tableView.dequeueReusableHeaderFooterView(type: SearchListHeaderView.self)
-      view?.build(title: "검색기록")
-      return view
-    case .popularity:
-      let view = tableView.dequeueReusableHeaderFooterView(type: SearchListHeaderView.self)
-      
-      view?.build(
-        title: "인기",
-        buttonStates: [
-          .init(title: "코인", action: { }),
-          .init(title: "NTF", action: { }),
-          .init(title: "카테고리", action: { }),
-        ],
-        selectedItem: 2
-      )
-      .sink(receiveValue: {
-        print("selected \($0)")
-      })
-      .store(in: &cancellables)
-      
-      return view
+      return []
+    case .trending:
+      return build(interactor.trendingCategory)
     case .highlight:
-      let view = tableView.dequeueReusableHeaderFooterView(type: SearchListHeaderView.self)
-      view?.build(
-        title: "인기",
-        buttonStates: [
-          .init(title: "상위 상승 목록", action: { print("상위 상승 목록")}),
-          .init(title: "상위 하락 목록", action: { print("상위 하락 목록")}),
-          .init(title: "신규 종목", action: { print("신규 종목")}),
-        ]
-      )
-      return view
+      return build(interactor.highlightCategory)
     }
   }
 }
@@ -142,32 +131,23 @@ extension SearchViewController: UITableViewDelegate {
 @available(iOS 17.0, *)
 #Preview {
   let vc = SearchViewController(
-    viewModel: .init(
-      state: .init(),
-      enviornment: .init(
-        loadSearchHistory: { [] },
-        saveSearchHistory: { }
-      )
-    )
-  )
+    interactor: SearchInteractor())
   return vc
 }
 #endif
 
-struct CoinData: Hashable {
-  var rowState: SearchListRow.State {
-    .init(
-      rank: "\(rank)",
-      imageUrl: URL(string: imageUrl),
-      abbreviation: name,
-      fullname: fullname,
-      priceInfo: .init(current: currentPrice, change24h: priceChange24h)
-    )
+extension SearchViewController: SearchDisplayLogic {
+  public func applySnapshot(
+    items: [SearchFeature.ViewModel.SectionType: [SearchFeature.RowData]]
+  ) {
+    var snapShot = NSDiffableDataSourceSnapshot<SearchFeature.ViewModel.SectionType, SearchFeature.RowData>()
+    snapShot.appendSections(items.keys.map { $0 })
+    
+    items.forEach { key, value in
+      snapShot.appendItems(value, toSection: key)
+    }
+    datasource.apply(snapShot)
   }
-  let rank: Int
-  let imageUrl: String
-  let name: String
-  let fullname: String
-  let currentPrice: Double
-  let priceChange24h: Double
 }
+
+
