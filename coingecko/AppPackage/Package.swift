@@ -10,7 +10,7 @@ let package = Package(
       targets: ["AppFeature"]),
   ],
   dependencies: [
-    .package(path: "../HTTPInterface"),
+    .package(path: "../HTTPClient"),
     .package(path: "../ViewHelper"),
   ],
   targets: [
@@ -24,16 +24,13 @@ let package = Package(
       name: "SearchFeature",
       dependencies: [
         "CombineExt",
-        "HTTPInterface",
         "ViewHelper",
         "APIClient"
       ]
     ),
     .target(
       name: "APIClient",
-      dependencies: [
-        "HTTPInterface"
-      ]
+      dependencies: []
     ),
     .target(name: "CombineExt"),
     .testTarget(
