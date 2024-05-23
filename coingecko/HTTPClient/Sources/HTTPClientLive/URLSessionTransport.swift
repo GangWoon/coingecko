@@ -51,8 +51,10 @@ public extension URLRequest {
     let path = requestUrlComponents.percentEncodedPath
     baseUrlComponents.percentEncodedPath += path
     baseUrlComponents.percentEncodedQuery = requestUrlComponents.percentEncodedQuery
-    baseUrlComponents.queryItems = request.queries
-      .map { .init(name: $0.name, value: $0.value) }
+    if !request.queries.isEmpty {
+      baseUrlComponents.queryItems = request.queries
+        .map { .init(name: $0.name, value: $0.value) }
+    }
     guard let url = baseUrlComponents.url else {
       throw URLSessionTransportError.invalidRequestURL(
         path: path,
