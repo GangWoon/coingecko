@@ -30,7 +30,9 @@ public final class SearchInteractor: SearchDataStore {
   public var text: String = ""
   
   public var selectedTrendingCategory: SearchFeature.TrendingCategory = .coin
-  public var trendingDataSource: SearchFeature.FetchTrending.Response = .init(state: [:])
+  public var trendingDataSource: SearchFeature.FetchTrending.Response = .empty
+  public var selectedHighlightCategory: SearchFeature.HighlightCategory = .topGainers
+  public var highlightDataSource: SearchFeature.FetchHighlight.Response = .empty
   
   // MARK: - Interface
   public var presenter: (any SearchPresentationLogic)?
@@ -69,8 +71,17 @@ extension SearchInteractor: SearchBusinessLogic {
       do {
         trendingDataSource = try await worker.getTrending()
         dataSource[.trending] = trendingDataSource.state[selectedTrendingCategory]
+        highlightDataSource = try await worker.getHighlight()
         
-        /// fetch hightlight
+        switch selectedHighlightCategory {
+        case .topGainers:
+          dataSource[.highlight] = highlightDataSource.topGainer
+        case .topLosers:
+          dataSource[.highlight] = highlightDataSource.topLoser
+        case .newListings:
+          dataSource[.highlight] = highlightDataSource.newCoins
+        }
+        
         presenter?.applySnapshot(items: dataSource)
       } catch {
         print(error)

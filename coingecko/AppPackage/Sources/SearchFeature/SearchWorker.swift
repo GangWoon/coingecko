@@ -5,6 +5,7 @@ public protocol SearchWorkerInterface: AnyObject {
   func loadSearchHistory() -> [String]
   func saveSearchHistory()
   func getTrending() async throws -> SearchFeature.FetchTrending.Response
+  func getHighlight() async throws -> SearchFeature.FetchHighlight.Response
 }
 
 public final class SearchWorker: SearchWorkerInterface {
@@ -29,9 +30,52 @@ public final class SearchWorker: SearchWorkerInterface {
     case .ok(let response):
       return response.body.json.toDomain()
       
-    case .undocumented(statusCode: let code, let payload):
+    case .undocumented:
       fatalError()
     }
+  }
+  
+  public func getHighlight() async throws -> SearchFeature.FetchHighlight.Response {
+    async let topGainerAndLoser = apiClient.topGainerAndLoser()
+    async let newCoins = apiClient.newCoins()
+    
+    try Task.checkCancellation()
+    let topGainer: [SearchFeature.RowData]
+    let topLoser: [SearchFeature.RowData]
+    switch try await topGainerAndLoser {
+    case .ok(let response):
+      topGainer = response.body.json
+        .sorted(by: >)
+        .prefix(7)
+        .map(\.rowData)
+      topLoser = response.body.json
+        .sorted(by: <)
+        .prefix(7)
+        .map(\.rowData)
+    case .undocumented:
+      topGainer = []
+      topLoser = []
+      fatalError()
+    }
+    
+    try Task.checkCancellation()
+    let newCoinList: [SearchFeature.RowData]
+    switch try await newCoins {
+    case .ok(let response):
+      newCoinList = response.body.json
+        .prefix(7)
+        .map(\.rowData)
+    
+    case .undocumented:
+      newCoinList = []
+      fatalError()
+    }
+    
+    return .init(
+      topGainer: topGainer,
+      topLoser: topLoser,
+      newCoins: newCoinList
+    )
   }
 }
 
@@ -83,5 +127,24 @@ extension Components.Schemas.Trending.Category {
       fullname: name,
       price: .init(current: 0, change24h: marketCap1HChange)
     )
+  }
+}
+
+extension Components.Schemas.Coin {
+  var rowData: SearchFeature.RowData {
+    .init(
+      rank: marketCapRank,
+      imageUrl: image,
+      name: symbol,
+      fullname: name,
+      price: price
+    )
+  }
+  
+  var price: SearchFeature.RowData.Price? {
+    if let current = currentPrice, let priceChangePercentage24H {
+      return .init(current: current, change24h: priceChangePercentage24H)
+    }
+    return nil
   }
 }

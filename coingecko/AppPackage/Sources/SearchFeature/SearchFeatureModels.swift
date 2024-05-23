@@ -4,11 +4,21 @@ import Foundation
 public enum SearchFeature {
   public enum FetchTrending {
     public struct Response {
+      static let empty = Self(state: [:])
       var state: [TrendingCategory: [RowData]]
     }
     
     struct ViewModel {
       
+    }
+  }
+  
+  public enum FetchHighlight {
+    public struct Response {
+      static let empty = Self(topGainer: [], topLoser: [], newCoins: [])
+      var topGainer: [RowData]
+      var topLoser: [RowData]
+      var newCoins: [RowData]
     }
   }
   
