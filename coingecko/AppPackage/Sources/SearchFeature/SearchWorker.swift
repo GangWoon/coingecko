@@ -8,13 +8,13 @@ public protocol SearchWorkerInterface: AnyObject {
 }
 
 public final class SearchWorker: SearchWorkerInterface {
-//  let apiClient: APIClient
+  let apiClient: APIClient
   
   public init(
-//    apiClient: APIClient = .live
+    apiClient: APIClient = .live
     
   ) {
-//    self.apiClient = apiClient
+    self.apiClient = apiClient
   }
   
   public func loadSearchHistory() -> [String] {
@@ -24,65 +24,64 @@ public final class SearchWorker: SearchWorkerInterface {
   public func saveSearchHistory() { }
   
   public func getTrending() async throws -> SearchFeature.FetchTrending.Response {
-//    let result = try await apiClient.trending()
-    fatalError()
-//    switch result {
-//    case .ok(let response):
-//      return response.body.json.toDomain()
-//      
-//    case .undocumented(statusCode: let code, let payload):
-//      fatalError()
-//    }
+    let result = try await apiClient.trending()
+    switch result {
+    case .ok(let response):
+      return response.body.json.toDomain()
+      
+    case .undocumented(statusCode: let code, let payload):
+      fatalError()
+    }
   }
 }
 
-//extension Components.Schemas.Trending {
-//  func toDomain() -> SearchFeature.FetchTrending.Response {
-//    .init(
-//      state: [
-//        .coin: coins.map(\.rowData),
-//        .nft: nfts.map(\.rowData),
-//        .category: categories.map(\.rowData)
-//      ]
-//    )
-//  }
-//}
-//
-//extension Components.Schemas.Trending.Coin {
-//  var rowData: SearchFeature.RowData {
-//    .init(
-//      rank: marketCapRank,
-//      imageUrl: thumb,
-//      name: symbol,
-//      fullname: name,
-//      price: nil
-//    )
-//  }
-//}
-//
-//extension Components.Schemas.Trending.NFT {
-//  var rowData: SearchFeature.RowData {
-//    .init(
-//      rank: nil,
-//      imageUrl: self.thumb,
-//      name: symbol,
-//      fullname: name,
-//      price: .init(
-//        current: floorPriceInNativeCurrency,
-//        change24h: floorPrice24HPercentageChange
-//      )
-//    )
-//  }
-//}
-//
-//extension Components.Schemas.Trending.Category {
-//  var rowData: SearchFeature.RowData {
-//    .init(
-//      rank: nil,
-//      imageUrl: nil,
-//      name: "",
-//      fullname: name,
-//      price: .init(current: 0, change24h: marketCap1HChange)
-//    )
-//  }
-//}
+extension Components.Schemas.Trending {
+  func toDomain() -> SearchFeature.FetchTrending.Response {
+    .init(
+      state: [
+        .coin: coins.map(\.rowData),
+        .nft: nfts.map(\.rowData),
+        .category: categories.map(\.rowData)
+      ]
+    )
+  }
+}
+
+extension Components.Schemas.Trending.Coin {
+  var rowData: SearchFeature.RowData {
+    .init(
+      rank: marketCapRank,
+      imageUrl: thumb,
+      name: symbol,
+      fullname: name,
+      price: nil
+    )
+  }
+}
+
+extension Components.Schemas.Trending.NFT {
+  var rowData: SearchFeature.RowData {
+    .init(
+      rank: nil,
+      imageUrl: self.thumb,
+      name: symbol,
+      fullname: name,
+      price: .init(
+        current: floorPriceInNativeCurrency,
+        change24h: floorPrice24HPercentageChange
+      )
+    )
+  }
+}
+
+extension Components.Schemas.Trending.Category {
+  var rowData: SearchFeature.RowData {
+    .init(
+      rank: nil,
+      imageUrl: nil,
+      name: "",
+      fullname: name,
+      price: .init(current: 0, change24h: marketCap1HChange)
+    )
+  }
+}

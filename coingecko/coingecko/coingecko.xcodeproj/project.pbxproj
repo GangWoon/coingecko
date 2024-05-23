@@ -3,10 +3,13 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 56;
+	objectVersion = 60;
 	objects = {
 
 /* Begin PBXBuildFile section */
+		AE5F1F6C2BFF1798006E3719 /* HTTPClient in Frameworks */ = {isa = PBXBuildFile; productRef = AE5F1F6B2BFF1798006E3719 /* HTTPClient */; };
+		AE5F1F6E2BFF1798006E3719 /* HTTPClientLive in Frameworks */ = {isa = PBXBuildFile; productRef = AE5F1F6D2BFF1798006E3719 /* HTTPClientLive */; };
+		AE5F1F702BFF18D5006E3719 /* AppFeature in Frameworks */ = {isa = PBXBuildFile; productRef = AE5F1F6F2BFF18D5006E3719 /* AppFeature */; };
 		AEE1C16E2BEDE05D00966005 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AEE1C16D2BEDE05D00966005 /* Assets.xcassets */; };
 		AEE1C1712BEDE05D00966005 /* Base in Resources */ = {isa = PBXBuildFile; fileRef = AEE1C1702BEDE05D00966005 /* Base */; };
 		AEE1C1812BEDE91100966005 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = AEE1C1802BEDE91100966005 /* main.swift */; };
@@ -26,6 +29,9 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				AE5F1F6C2BFF1798006E3719 /* HTTPClient in Frameworks */,
+				AE5F1F702BFF18D5006E3719 /* AppFeature in Frameworks */,
+				AE5F1F6E2BFF1798006E3719 /* HTTPClientLive in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -85,6 +91,9 @@
 			);
 			name = coingecko;
 			packageProductDependencies = (
+				AE5F1F6B2BFF1798006E3719 /* HTTPClient */,
+				AE5F1F6D2BFF1798006E3719 /* HTTPClientLive */,
+				AE5F1F6F2BFF18D5006E3719 /* AppFeature */,
 			);
 			productName = coingecko;
 			productReference = AEE1C1612BEDE05C00966005 /* coingecko.app */;
@@ -116,6 +125,7 @@
 			);
 			mainGroup = AEE1C1582BEDE05C00966005;
 			packageReferences = (
+				AE5F1F6A2BFF1798006E3719 /* XCLocalSwiftPackageReference "../HTTPClient" */,
 			);
 			productRefGroup = AEE1C1622BEDE05C00966005 /* Products */;
 			projectDirPath = "";
@@ -359,6 +369,28 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		AE5F1F6A2BFF1798006E3719 /* XCLocalSwiftPackageReference "../HTTPClient" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../HTTPClient;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		AE5F1F6B2BFF1798006E3719 /* HTTPClient */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = HTTPClient;
+		};
+		AE5F1F6D2BFF1798006E3719 /* HTTPClientLive */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = HTTPClientLive;
+		};
+		AE5F1F6F2BFF18D5006E3719 /* AppFeature */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = AppFeature;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = AEE1C1592BEDE05C00966005 /* Project object */;
 }
