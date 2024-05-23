@@ -1,5 +1,6 @@
 import Foundation
 
+@MainActor
 public protocol SearchPresentationLogic: AnyObject {
   func applySnapshot(items: [SearchFeature.ViewModel.SectionType : [SearchFeature.RowData]])
 }

@@ -2,6 +2,7 @@ import ViewHelper
 import Combine
 import UIKit
 
+@MainActor
 public protocol SearchDisplayLogic: AnyObject {
   func applySnapshot(items: [SearchFeature.ViewModel.SectionType: [SearchFeature.RowData]])
 }
@@ -140,8 +141,10 @@ extension SearchViewController: SearchDisplayLogic {
   public func applySnapshot(
     items: [SearchFeature.ViewModel.SectionType: [SearchFeature.RowData]]
   ) {
+    let items = items.sorted(by: { $0.key.rawValue < $1.key.rawValue })
+    print(items.map { $0.key })
     var snapShot = NSDiffableDataSourceSnapshot<SearchFeature.ViewModel.SectionType, SearchFeature.RowData>()
-    snapShot.appendSections(items.keys.map { $0 })
+    snapShot.appendSections(items.map(\.key))
     
     items.forEach { key, value in
       snapShot.appendItems(value, toSection: key)

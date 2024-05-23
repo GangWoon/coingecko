@@ -53,11 +53,27 @@ extension SearchInteractor: SearchBusinessLogic {
     let section = sectionList[request.indexPath.section]
     
     switch section {
+    case .history:
+      fatalError()
     case .trending:
+      selectedTrendingCategory = SearchFeature.TrendingCategory(rawValue: request.indexPath.row) ?? selectedTrendingCategory
       dataSource[.trending] = trendingDataSource.state[.init(rawValue: request.indexPath.row) ?? .coin]
-      presenter?.applySnapshot(items: dataSource)
-    default:
-      break
+      Task { @MainActor in
+        presenter?.applySnapshot(items: dataSource)
+      }
+    case .highlight:
+      selectedHighlightCategory = SearchFeature.HighlightCategory(rawValue: request.indexPath.row) ?? selectedHighlightCategory
+      switch selectedHighlightCategory {
+      case .topGainers:
+        dataSource[.highlight] = highlightDataSource.topGainer
+      case .topLosers:
+        dataSource[.highlight] = highlightDataSource.topLoser
+      case .newListings:
+        dataSource[.highlight] = highlightDataSource.newCoins
+      }
+      Task { @MainActor in
+        presenter?.applySnapshot(items: dataSource)
+      }
     }
   }
   
@@ -82,7 +98,7 @@ extension SearchInteractor: SearchBusinessLogic {
           dataSource[.highlight] = highlightDataSource.newCoins
         }
         
-        presenter?.applySnapshot(items: dataSource)
+        await presenter?.applySnapshot(items: dataSource)
       } catch {
         print(error)
       }
