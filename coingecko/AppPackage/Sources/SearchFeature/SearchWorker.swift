@@ -12,7 +12,7 @@ public final class SearchWorker: SearchWorkerInterface {
   let apiClient: APIClient
   
   public init(
-    apiClient: APIClient = .live
+    apiClient: APIClient = .test
     
   ) {
     self.apiClient = apiClient
@@ -52,7 +52,10 @@ public final class SearchWorker: SearchWorkerInterface {
         .sorted(by: <)
         .prefix(7)
         .map(\.rowData)
-    case .undocumented:
+    case .undocumented(statusCode: let code, let payload):
+      if let body = payload.body {
+        print(code, String(data: body, encoding: .utf8))
+      }
       topGainer = []
       topLoser = []
       fatalError()
