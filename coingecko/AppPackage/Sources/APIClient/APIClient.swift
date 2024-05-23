@@ -4,7 +4,8 @@ import Foundation
 //
 public struct APIClient: Sendable {
   public var trending: @Sendable () async throws -> Operations.Trending.Output
-  public var highlight: @Sendable () async throws -> Operations.Highlight.Output
+  public var topGainerAndLoser: @Sendable () async throws -> Operations.Coin.Output
+  public var newCoins: @Sendable () async throws -> Operations.Coin.Output
 }
 //
 public  extension APIClient {
@@ -13,7 +14,6 @@ public  extension APIClient {
       serverURL: URL(string: "https://api.coingecko.com/api/v3/"),
       transport: URLSessionTransport()
     )
-    let converter = Converter()
     
     return .init(
       trending: {
@@ -22,13 +22,7 @@ public  extension APIClient {
         } deserializer: { response in
           switch response.statusCode {
           case 200:
-            let body = try converter
-              .getResponseBodyAsJson(
-                Components.Schemas.Trending.self,
-                from: response.body,
-                transforming: Operations.Trending.Output.Ok.Body.json
-              )
-            return .ok(.init(body: body))
+            return try .ok(.init(body: .json(decode(response.body))))
           default:
             return .undocumented(
               statusCode: response.statusCode,
@@ -37,21 +31,58 @@ public  extension APIClient {
           }
         }
       },
-      highlight: {
-        fatalError()
-//        try await client
-//          .send(
-//            input: Operations.Highlight.Input(),
-//            serializer: { input in
-//              var request = HTTPRequest(path: "/coins/markets?vs_currency=usd", method: .get)
-//              fatalError()
-//            },
-//            deserializer: { _, _ in
-//              fatalError()
-//            }
-//          )
+      topGainerAndLoser: {
+        try await client
+          .send(
+            input: Operations.Coin.Input(),
+            serializer: { _ in
+              HTTPRequest(
+                path: "coins/markets",
+                queries: [
+                  .init(name: "vs_currency", value: "usd"),
+                  .init(name: "order", value: "market_cap_desc"),
+                  .init(name: "per_page", value: "200"),
+                  .init(name: "page", value: "1")
+                ]
+              )
+            },
+            deserializer: { response in
+              switch response.statusCode {
+              case 200:
+                return try .ok(.init(body: .json(decode(response.body))))
+              default:
+                return .undocumented(
+                  statusCode: response.statusCode,
+                  .init(headerFields: response.headerFields, body: response.body)
+                )
+              }
+            }
+          )
+      },
+      newCoins: {
+        try await client
+          .send(
+            input: Operations.Coin.Input(),
+            serializer: { _ in HTTPRequest(path: "coins/list") },
+            deserializer: { response in
+              switch response.statusCode {
+              case 200:
+                return try .ok(.init(body: .json(decode(response.body))))
+              default:
+                return .undocumented(
+                  statusCode: response.statusCode,
+                  .init(headerFields: response.headerFields, body: response.body)
+                )
+              }
+            }
+          )
       }
     )
   }()
 }
-//
+
+private func decode<T: Decodable>(_ data: Data) throws -> T {
+  let decoder = JSONDecoder()
+  decoder.keyDecodingStrategy = .convertFromSnakeCase
+  return try decoder.decode(T.self, from: data)
+}

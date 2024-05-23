@@ -25,24 +25,20 @@ public enum Operations {
     }
   }
   
-  public enum Highlight {
-    public struct Input: Sendable {
-      struct Query: Sendable, Hashable {
-        
-      }
-    }
+  public enum Coin {
+    public struct Input: Sendable { }
     public enum Output: Sendable {
       public struct Ok: Sendable {
         public enum Body: Sendable {
-          public var json: Components.Schemas.Trending {
+          public var json: [Components.Schemas.Coin] {
             get {
               switch self {
-              case .json(let trending):
-                return trending
+              case .json(let value):
+                return value
               }
             }
           }
-          case json(Components.Schemas.Trending)
+          case json([Components.Schemas.Coin])
         }
         public var body: Body
       }
