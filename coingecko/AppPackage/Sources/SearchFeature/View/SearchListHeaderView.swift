@@ -3,9 +3,15 @@ import ViewHelper
 import Combine
 import UIKit
 
-final class SearchListHeaderView: UITableViewHeaderFooterView {
+final class SearchListHeaderView: UITableViewHeaderFooterView, ViewStateRemover {
   private var selected: CurrentValueSubject<ButtonState?, Never> = .init(nil)
   private var cancellables: Set<AnyCancellable> = []
+  internal var viewStateRemover: [() -> ()?] = []
+  
+  override func prepareForReuse() {
+    super.prepareForReuse()
+    removeState()
+  }
   
   @discardableResult
   func build(
@@ -32,13 +38,16 @@ final class SearchListHeaderView: UITableViewHeaderFooterView {
         return button
       }
     
-    let wrappedView = buttonList
-      .map { $0.addPadding(leading: 4, bottom: 4, trailing: 4) }
-    let hstack = UIStackView(.horizontal, alignment: .leading, subviews: wrappedView)
+    let hstack = UIStackView(.horizontal, alignment: .leading, subviews: buttonList)
+    hstack.isLayoutMarginsRelativeArrangement = true
     hstack.addSpacing()
     stack.addArrangedSubview(hstack)
     contentView.addSubview(stack)
     stack.equalToParent()
+    stack.setContentHuggingPriority(.defaultHigh, for: .vertical)
+    viewStateRemover.append({ [weak stack] in
+      stack?.removeFromSuperview()
+    })
     
     return bindingViewState(
       buttonStates: buttonStates,
