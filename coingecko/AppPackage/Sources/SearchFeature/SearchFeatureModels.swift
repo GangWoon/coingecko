@@ -42,7 +42,7 @@ public enum SearchFeature {
   
   
   public struct ViewModel {
-    public enum SectionType: Int, CaseIterable {
+    public enum SectionType: Int, Comparable {
       var title: String {
         switch self {
         case .history:
@@ -56,6 +56,13 @@ public enum SearchFeature {
       case history = 0
       case trending
       case highlight
+      
+      public static func < (
+        lhs: SearchFeature.ViewModel.SectionType,
+        rhs: SearchFeature.ViewModel.SectionType
+      ) -> Bool {
+        lhs.rawValue < rhs.rawValue
+      }
     }
     
     var sectionList: [SectionType]
@@ -72,7 +79,7 @@ extension SearchFeature {
   public struct RowData: Hashable {
     var rowState: SearchListRow.State {
       .init(
-        rank: "\(rank)",
+        rank: "\(rank ?? 0)",
         imageUrl: URL(string: imageUrl ?? ""),
         abbreviation: name,
         fullname: fullname,
@@ -93,7 +100,7 @@ extension SearchFeature {
     }
   }
   
-  public enum TrendingCategory: Int, Hashable, CustomStringConvertible, ListCategoryable {
+  public enum TrendingCategory: Int, Hashable, CustomStringConvertible, ListCategoryable, Comparable {
     public var description: String {
       switch self {
       case .coin:
@@ -107,6 +114,13 @@ extension SearchFeature {
     case coin = 0
     case nft
     case category
+    
+    public static func < (
+      lhs: SearchFeature.TrendingCategory,
+      rhs: SearchFeature.TrendingCategory
+    ) -> Bool {
+      lhs.rawValue < rhs.rawValue
+    }
   }
   
   public enum HighlightCategory: Int, CustomStringConvertible, ListCategoryable {

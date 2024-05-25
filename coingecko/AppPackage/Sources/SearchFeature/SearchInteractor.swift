@@ -18,10 +18,10 @@ public protocol SearchBusinessLogic {
 
 public final class SearchInteractor: SearchDataStore {
   public var sectionList: [SearchFeature.ViewModel.SectionType] {
-    Array(dataSource.keys)
+    Array(dataSource.keys.sorted())
   }
   public var trendingCategory: [SearchFeature.TrendingCategory] {
-    Array(trendingDataSource.state.keys)
+    Array(trendingDataSource.state.keys.sorted())
   }
   public var highlightCategory: [SearchFeature.HighlightCategory] = [.topGainers, .topLosers, .newListings]
   public var dataSource: [SearchFeature.ViewModel.SectionType : [SearchFeature.RowData]] = [:]
@@ -83,7 +83,6 @@ extension SearchInteractor: SearchBusinessLogic {
         dataSource[.history] = []
         // MARK: - LoadFromDisk
       }
-      
       do {
         trendingDataSource = try await worker.getTrending()
         dataSource[.trending] = trendingDataSource.state[selectedTrendingCategory]
@@ -106,10 +105,4 @@ extension SearchInteractor: SearchBusinessLogic {
   }
   
   public func viewDidDisAppear() { }
-}
-
-public enum TrendingCategory {
-  case coin
-  case nft
-  case category
 }

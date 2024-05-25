@@ -126,6 +126,3 @@ extension SearchListRow.State {
 extension NSDirectionalEdgeInsets {
   fileprivate static let searchListRow = Self(top: 8, leading: 16, bottom: 8, trailing: 16)
 }
-
-
-

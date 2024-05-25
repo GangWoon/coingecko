@@ -53,9 +53,6 @@ public final class SearchWorker: SearchWorkerInterface {
         .prefix(7)
         .map(\.rowData)
     case .undocumented(statusCode: let code, let payload):
-      if let body = payload.body {
-        print(code, String(data: body, encoding: .utf8))
-      }
       topGainer = []
       topLoser = []
       fatalError()
@@ -83,12 +80,16 @@ public final class SearchWorker: SearchWorkerInterface {
 }
 
 extension Components.Schemas.Trending {
+  var minCount: Int {
+    min(nfts.count, coins.count, categories.count)
+  }
+  
   func toDomain() -> SearchFeature.FetchTrending.Response {
     .init(
       state: [
         .coin: coins.map(\.rowData),
-        .nft: nfts.map(\.rowData),
-        .category: categories.map(\.rowData)
+        .nft: Array(nfts.map(\.rowData).prefix(minCount)),
+        .category: Array(categories.map(\.rowData).prefix(minCount))
       ]
     )
   }

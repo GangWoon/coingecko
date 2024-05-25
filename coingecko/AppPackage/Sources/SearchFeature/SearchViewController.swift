@@ -66,12 +66,17 @@ public final class SearchViewController: UIViewController {
     tableView.registerForHeaderFooterView(type: SearchListHeaderView.self)
     tableView.delegate = self
     view.addSubview(tableView)
-    datasource = .init(tableView: tableView, cellProvider: { tableView, indexPath, datum in
+    datasource = .init(tableView: tableView, cellProvider: { [weak self] tableView, indexPath, datum in
       guard
+        let self,
         let cell = tableView.dequeueReusableCell(type: SearchListRow.self, for: indexPath)
       else { return .init() }
-      let section = SearchFeature.ViewModel.SectionType(rawValue: indexPath.section) ?? .highlight
-      cell.build(type: section, state: datum.rowState)
+      let sectionType = self.interactor.sectionList[indexPath.section]
+      
+      cell.build(
+        type: sectionType,
+        state: datum.rowState
+      )
       
       return cell
     })
@@ -87,6 +92,13 @@ public final class SearchViewController: UIViewController {
   }
 }
 extension SearchViewController: UITableViewDelegate {
+  public func tableView(
+    _ tableView: UITableView,
+    heightForRowAt indexPath: IndexPath
+  ) -> CGFloat {
+    60
+  }
+  
   public func tableView(
     _ tableView: UITableView,
     viewForHeaderInSection section: Int
@@ -141,8 +153,8 @@ extension SearchViewController: SearchDisplayLogic {
   public func applySnapshot(
     items: [SearchFeature.ViewModel.SectionType: [SearchFeature.RowData]]
   ) {
-    let items = items.sorted(by: { $0.key.rawValue < $1.key.rawValue })
-    print(items.map { $0.key })
+    let items = items
+      .sorted { $0.key.rawValue < $1.key.rawValue }
     var snapShot = NSDiffableDataSourceSnapshot<SearchFeature.ViewModel.SectionType, SearchFeature.RowData>()
     snapShot.appendSections(items.map(\.key))
     

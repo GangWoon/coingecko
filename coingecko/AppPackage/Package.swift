@@ -30,7 +30,9 @@ let package = Package(
     ),
     .target(
       name: "APIClient",
-      dependencies: ["HTTPClient"]
+      dependencies: [
+        .product(name: "HTTPClientLive", package: "HTTPClient")
+      ]
     ),
     .target(name: "CombineExt"),
     .testTarget(
