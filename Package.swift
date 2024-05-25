@@ -10,8 +10,8 @@ let package = Package(
       targets: ["AppFeature"]),
   ],
   dependencies: [
-    .package(path: "../HTTPClient"),
-    .package(path: "../ViewHelper"),
+    .package(path: "./HTTPClient"),
+    .package(path: "./ViewHelper"),
   ],
   targets: [
     .target(
