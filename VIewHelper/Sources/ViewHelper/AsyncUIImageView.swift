@@ -10,12 +10,17 @@ import struct Foundation.URL
 
 public class AsyncUIImageView: UIImageView {
   public var url: URL?
-  
+  private var placeholder: UIImage?
   private let cache: ImageCache
   private var task: Task<Void, Never>?
   
-  public init(url: URL? = nil, cache: ImageCache = .shared) {
+  public init(
+    url: URL? = nil,
+    placeholder: UIImage? = nil,
+    cache: ImageCache = .shared
+  ) {
     self.url = url
+    self.placeholder = placeholder
     self.cache = cache
     super.init(frame: .zero)
     build()
@@ -26,6 +31,10 @@ public class AsyncUIImageView: UIImageView {
   }
   
   deinit {
+    cancel()
+  }
+  
+  public func cancel() {
     task?.cancel()
     task = nil
   }
@@ -37,7 +46,11 @@ public class AsyncUIImageView: UIImageView {
         let data = try await cache.fetch(url)
         image = UIImage(data: data)
       } catch {
-        image = UIImage(systemName: "exclamationmark.square")
+        if let placeholder {
+          image = placeholder
+        } else {
+          image = UIImage(systemName: "exclamationmark.square")
+        }
       }
     }
   }
