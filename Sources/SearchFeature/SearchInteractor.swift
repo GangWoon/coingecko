@@ -2,7 +2,7 @@ import Foundation
 
 public protocol SearchDataStore {
   var text: String { get }
-  var sectionList: [SearchFeature.ViewModel.SectionType] { get }
+  var sectionList: [SearchFeature.SectionType] { get }
   var selectedTrendingCategory: SearchFeature.TrendingCategory { get set }
   
   var trendingCategory: [SearchFeature.TrendingCategory] { get }
@@ -18,8 +18,8 @@ public protocol SearchBusinessLogic {
 }
 
 public final class SearchInteractor: SearchDataStore {
-  public var sectionList: [SearchFeature.ViewModel.SectionType] {
-    var list: [SearchFeature.ViewModel.SectionType] = []
+  public var sectionList: [SearchFeature.SectionType] {
+    var list: [SearchFeature.SectionType] = []
     if hasTrendingData {
       list.append(.trending)
     }
@@ -36,7 +36,7 @@ public final class SearchInteractor: SearchDataStore {
     SearchFeature.HighlightCategory.allCases
   }
   
-  public var dataSource: [SearchFeature.ViewModel.SectionType : [SearchFeature.RowData]] = [:]
+  public var dataSource: [SearchFeature.SectionType : [SearchFeature.RowData]] = [:]
   
   // MARK: - State
   public var text: String = ""

@@ -16,7 +16,7 @@ public final class SearchPresenter {
 
 extension SearchPresenter: SearchPresentationLogic {
   public func updateSection(_ response: SearchFeature.UpdateList.ResponseType) {
-    let section: SearchFeature.ViewModel.SectionType
+    let section: SearchFeature.SectionType
     let rowData: [SearchFeature.RowData]
     switch response {
     case .trending(let response):
@@ -45,7 +45,7 @@ extension SearchPresenter: SearchPresentationLogic {
   }
   
   public func updateList(_ response: SearchFeature.UpdateList.Response) {
-    var dataSource: [SearchFeature.ViewModel.SectionType: [SearchFeature.RowData]] = [:]
+    var dataSource: [SearchFeature.SectionType: [SearchFeature.RowData]] = [:]
     switch response.selectedTrendingCategory {
     case .coin:
       dataSource[.trending] = response.trendingResponse.coins.map(\.rowDatum)

@@ -25,7 +25,7 @@ public enum SearchFeature {
     }
     
     public struct ViewModel {
-      var dataSource: [SearchFeature.ViewModel.SectionType: [RowData]]
+      var dataSource: [SearchFeature.SectionType: [RowData]]
     }
     
     public enum Trending {
@@ -83,39 +83,33 @@ public enum SearchFeature {
       var indexPath: IndexPath
     }
     public struct Response {
-      var dataSource: [SearchFeature.ViewModel.SectionType : [SearchFeature.RowData]]
+      var dataSource: [SearchFeature.SectionType : [SearchFeature.RowData]]
     }
     public struct ViewModel {
       
     }
   }
-  
-  public struct ViewModel {
-    public enum SectionType: Int, Comparable {
-      var title: String {
-        switch self {
-        case .history:
-          return "검색기록"
-        case .trending:
-          return "인기"
-        case .highlight:
-          return "하이라이트"
-        }
-      }
-      case history = 0
-      case trending
-      case highlight
-      
-      public static func < (
-        lhs: SearchFeature.ViewModel.SectionType,
-        rhs: SearchFeature.ViewModel.SectionType
-      ) -> Bool {
-        lhs.rawValue < rhs.rawValue
+  public enum SectionType: Int, Comparable {
+    var title: String {
+      switch self {
+      case .history:
+        return "검색기록"
+      case .trending:
+        return "인기"
+      case .highlight:
+        return "하이라이트"
       }
     }
+    case history = 0
+    case trending
+    case highlight
     
-    var sectionList: [SectionType]
-    var trendingCategory: [TrendingCategory]
+    public static func < (
+      lhs: SearchFeature.SectionType,
+      rhs: SearchFeature.SectionType
+    ) -> Bool {
+      lhs.rawValue < rhs.rawValue
+    }
   }
 }
 

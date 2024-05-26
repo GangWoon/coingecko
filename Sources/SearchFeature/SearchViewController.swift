@@ -7,7 +7,7 @@ public protocol SearchDisplayLogic: AnyObject {
   func applySnapshot(_ viewModel: SearchFeature.UpdateList.ViewModel)
   func reloadSection(
     _ viewModel: [SearchFeature.RowData],
-    section: SearchFeature.ViewModel.SectionType
+    section: SearchFeature.SectionType
   )
 }
 
@@ -15,7 +15,7 @@ public final class SearchViewController: BaseViewController {
   private var searchField: SearchTextField!
   var interactor: any SearchDataStore & SearchBusinessLogic
   
-  private var datasource: UITableViewDiffableDataSource<SearchFeature.ViewModel.SectionType, SearchFeature.RowData>!
+  private var datasource: UITableViewDiffableDataSource<SearchFeature.SectionType, SearchFeature.RowData>!
   private var cancellables: Set<AnyCancellable> = []
   
   public init(interactor: any SearchDataStore & SearchBusinessLogic) {
@@ -139,7 +139,7 @@ extension SearchViewController: UITableViewDelegate {
   }
   
   private func buildButtonStates(
-    _ sectionType: SearchFeature.ViewModel.SectionType,
+    _ sectionType: SearchFeature.SectionType,
     section: Int
   ) -> [SearchListHeaderView.ButtonState] {
     let build: ([ListCategoryable]) -> [SearchListHeaderView.ButtonState] = { list in
@@ -197,7 +197,7 @@ extension SearchViewController: SearchDisplayLogic {
     let items = viewModel.dataSource
       .sorted { $0.key.rawValue < $1.key.rawValue }
     
-    var snapShot = NSDiffableDataSourceSnapshot<SearchFeature.ViewModel.SectionType, SearchFeature.RowData>()
+    var snapShot = NSDiffableDataSourceSnapshot<SearchFeature.SectionType, SearchFeature.RowData>()
     snapShot.appendSections(items.map(\.key))
     items.forEach { key, value in
       snapShot.appendItems(value, toSection: key)
@@ -207,7 +207,7 @@ extension SearchViewController: SearchDisplayLogic {
   
   public func reloadSection(
     _ viewModel: [SearchFeature.RowData],
-    section: SearchFeature.ViewModel.SectionType
+    section: SearchFeature.SectionType
   ) {
     var snapshot = datasource.snapshot()
     let items = snapshot.itemIdentifiers(inSection: section)
