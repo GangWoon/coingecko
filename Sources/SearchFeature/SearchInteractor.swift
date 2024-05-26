@@ -11,29 +11,65 @@ public protocol SearchDataStore {
 }
 
 public protocol SearchBusinessLogic {
+  func prepare() async
+  
   func searchFieldChanged(_ text: String?)
   func categoryTapped(_ request: SearchFeature.CategoryTapped.Request)
-  func viewWillAppear(_ request: SearchFeature.ViewWillAppear.Reqeuset)
-  func viewDidDisAppear()
 }
 
 public final class SearchInteractor: SearchDataStore {
   public var sectionList: [SearchFeature.ViewModel.SectionType] {
-    Array(dataSource.keys.sorted())
+    var list: [SearchFeature.ViewModel.SectionType] = []
+    if hasTrendingData {
+      list.append(.trending)
+    }
+    if hasHighlightData {
+      list.append(.highlight)
+    }
+    
+    return list
   }
   public var trendingCategory: [SearchFeature.TrendingCategory] {
-    Array(trendingDataSource.state.keys.sorted())
+    SearchFeature.TrendingCategory.allCases
   }
-  public var highlightCategory: [SearchFeature.HighlightCategory] = [.topGainers, .topLosers, .newListings]
+  public var highlightCategory: [SearchFeature.HighlightCategory] {
+    SearchFeature.HighlightCategory.allCases
+  }
+  
   public var dataSource: [SearchFeature.ViewModel.SectionType : [SearchFeature.RowData]] = [:]
   
   // MARK: - State
   public var text: String = ""
   
+  var hasTrendingData: Bool {
+    !trendingCoins.isEmpty || !trendingNFTs.isEmpty || !trendingCategories.isEmpty
+  }
   public var selectedTrendingCategory: SearchFeature.TrendingCategory = .coin
-  public var trendingDataSource: SearchFeature.FetchTrending.Response = .empty
+  var trendingResponse: SearchFeature.FetchTrending.Response {
+    .init(
+      coins: trendingCoins,
+      nfts: trendingNFTs,
+      categories: trendingCategories
+    )
+  }
+  public var trendingCoins: [SearchFeature.Coin] = []
+  public var trendingNFTs: [SearchFeature.NFT] = []
+  public var trendingCategories: [SearchFeature.Category] = []
+  
+  var hasHighlightData: Bool {
+    !trendingCoins.isEmpty || !trendingNFTs.isEmpty || !trendingCategories.isEmpty
+  }
   public var selectedHighlightCategory: SearchFeature.HighlightCategory = .topGainers
-  public var highlightDataSource: SearchFeature.FetchHighlight.Response = .empty
+  var highlightResponse: SearchFeature.FetchHighlight.Response {
+    .init(
+      topGainer: topGainer,
+      topLoser: topLoser,
+      newCoins: newCoins
+    )
+  }
+  public var topGainer: [SearchFeature.Coin] = []
+  public var topLoser: [SearchFeature.Coin] = []
+  public var newCoins: [SearchFeature.Coin] = []
   
   // MARK: - Interface
   public var presenter: (any SearchPresentationLogic)?
@@ -58,52 +94,50 @@ extension SearchInteractor: SearchBusinessLogic {
       fatalError()
     case .trending:
       selectedTrendingCategory = SearchFeature.TrendingCategory(rawValue: request.indexPath.row) ?? selectedTrendingCategory
-      dataSource[.trending] = trendingDataSource.state[.init(rawValue: request.indexPath.row) ?? .coin]
-      Task { @MainActor in
-        presenter?.applySnapshot(items: dataSource)
+      Task {
+        await presenter?
+          .updateSection(
+            .trending(.init(data: trendingResponse, selectedCategory: selectedTrendingCategory))
+          )
       }
     case .highlight:
       selectedHighlightCategory = SearchFeature.HighlightCategory(rawValue: request.indexPath.row) ?? selectedHighlightCategory
-      switch selectedHighlightCategory {
-      case .topGainers:
-        dataSource[.highlight] = highlightDataSource.topGainer
-      case .topLosers:
-        dataSource[.highlight] = highlightDataSource.topLoser
-      case .newListings:
-        dataSource[.highlight] = highlightDataSource.newCoins
-      }
-      Task { @MainActor in
-        presenter?.applySnapshot(items: dataSource)
+      Task {
+        await presenter?
+          .updateSection(
+            .highlight(.init(data: highlightResponse, selectedCategory: selectedHighlightCategory))
+          )
       }
     }
   }
   
-  public func viewWillAppear(_ request: SearchFeature.ViewWillAppear.Reqeuset) {
-    Task {
-      if !worker.loadSearchHistory().isEmpty {
-        dataSource[.history] = []
-        // MARK: - LoadFromDisk
-      }
-      do {
-        trendingDataSource = try await worker.getTrending()
-        dataSource[.trending] = trendingDataSource.state[selectedTrendingCategory]
-        highlightDataSource = try await worker.getHighlight()
-        
-        switch selectedHighlightCategory {
-        case .topGainers:
-          dataSource[.highlight] = highlightDataSource.topGainer
-        case .topLosers:
-          dataSource[.highlight] = highlightDataSource.topLoser
-        case .newListings:
-          dataSource[.highlight] = highlightDataSource.newCoins
-        }
-        
-        await presenter?.applySnapshot(items: dataSource)
-      } catch {
-        print(error)
-      }
+  public func prepare() async {
+    if !worker.loadSearchHistory().isEmpty {
+      dataSource[.history] = []
+    }
+    do {
+      let trendingResponse = try await worker.getTrending()
+      trendingCoins = trendingResponse.coins
+      trendingNFTs = trendingResponse.nfts
+      trendingCategories = trendingResponse.categories
+      
+      let highlightResponse = try await worker.getHighlight()
+      topGainer = highlightResponse.topGainer
+      topLoser = highlightResponse.topLoser
+      newCoins = highlightResponse.newCoins
+      
+      await presenter?.updateList(
+        .init(
+          trendingResponse: trendingResponse,
+          selectedTrendingCategory: selectedTrendingCategory,
+          highlightResponse: highlightResponse,
+          selectedHighlightCategory: selectedHighlightCategory
+        )
+      )
+    } catch is CancellationError {
+      
+    } catch {
+      
     }
   }
-  
-  public func viewDidDisAppear() { }
 }

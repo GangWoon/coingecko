@@ -4,10 +4,14 @@ import UIKit
 
 @MainActor
 public protocol SearchDisplayLogic: AnyObject {
-  func applySnapshot(items: [SearchFeature.ViewModel.SectionType: [SearchFeature.RowData]])
+  func applySnapshot(_ viewModel: SearchFeature.UpdateList.ViewModel)
+  func reloadSection(
+    _ viewModel: [SearchFeature.RowData],
+    section: SearchFeature.ViewModel.SectionType
+  )
 }
 
-public final class SearchViewController: UIViewController {
+public final class SearchViewController: BaseViewController {
   private var searchField: SearchTextField!
   var interactor: any SearchDataStore & SearchBusinessLogic
   
@@ -29,9 +33,8 @@ public final class SearchViewController: UIViewController {
     build()
   }
   
-  public override func viewWillAppear(_ animated: Bool) {
-    super.viewWillAppear(animated)
-    interactor.viewWillAppear(.init())
+  public override func task() async {
+    await interactor.prepare()
   }
   
   private func build() {
@@ -190,18 +193,28 @@ extension SearchFeature.HighlightCategory {
 #endif
 
 extension SearchViewController: SearchDisplayLogic {
-  public func applySnapshot(
-    items: [SearchFeature.ViewModel.SectionType: [SearchFeature.RowData]]
-  ) {
-    let items = items
+  public func applySnapshot(_ viewModel: SearchFeature.UpdateList.ViewModel) {
+    let items = viewModel.dataSource
       .sorted { $0.key.rawValue < $1.key.rawValue }
+    
     var snapShot = NSDiffableDataSourceSnapshot<SearchFeature.ViewModel.SectionType, SearchFeature.RowData>()
     snapShot.appendSections(items.map(\.key))
-    
     items.forEach { key, value in
       snapShot.appendItems(value, toSection: key)
     }
     datasource.apply(snapShot)
+  }
+  
+  public func reloadSection(
+    _ viewModel: [SearchFeature.RowData],
+    section: SearchFeature.ViewModel.SectionType
+  ) {
+    var snapshot = datasource.snapshot()
+    let items = snapshot.itemIdentifiers(inSection: section)
+    snapshot.deleteItems(items)
+    
+    snapshot.appendItems(viewModel, toSection: section)
+    datasource.apply(snapshot)
   }
 }
 

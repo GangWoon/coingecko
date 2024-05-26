@@ -4,28 +4,78 @@ import Foundation
 public enum SearchFeature {
   public enum FetchTrending {
     public struct Response {
-      static let empty = Self(state: [:])
-      var state: [TrendingCategory: [RowData]]
+      static let empty = Self(coins: [], nfts: [], categories: [])
+      var coins: [Coin]
+      var nfts: [NFT]
+      var categories: [Category]
+    }
+  }
+  
+  public enum UpdateList {
+    public enum ResponseType {
+      case trending(Trending.Response)
+      case highlight(Highlight.Response)
     }
     
-    struct ViewModel {
-      
+    public struct Response {
+      var trendingResponse: FetchTrending.Response
+      var selectedTrendingCategory: TrendingCategory
+      var highlightResponse: FetchHighlight.Response
+      var selectedHighlightCategory: HighlightCategory
     }
+    
+    public struct ViewModel {
+      var dataSource: [SearchFeature.ViewModel.SectionType: [RowData]]
+    }
+    
+    public enum Trending {
+      public struct Response {
+        var data: FetchTrending.Response
+        var selectedCategory: TrendingCategory
+      }
+    }
+    
+    public enum Highlight {
+      public struct Response {
+        var data: FetchHighlight.Response
+        var selectedCategory: HighlightCategory
+      }
+    }
+  }
+  
+  public struct Coin {
+    public var id: String
+    public var coinId: Int?
+    public var name: String
+    public var symbol: String
+    public var marketCapRank: Int?
+    public var thumb: String?
+    public var currentPrice: Double?
+    public var priceChangePercentage24H: Double?
+  }
+  
+  public struct NFT {
+    public var id: String
+    public var name: String
+    public var symbol: String
+    public var thumb: String
+    public var floorPriceInNativeCurrency: Double
+    public var floorPrice24HPercentageChange: Double
+  }
+  
+  public struct Category {
+    public var id: Int
+    public var name: String
+    public var marketCap1HChange: Double
   }
   
   public enum FetchHighlight {
     public struct Response {
       static let empty = Self(topGainer: [], topLoser: [], newCoins: [])
-      var topGainer: [RowData]
-      var topLoser: [RowData]
-      var newCoins: [RowData]
+      public var topGainer: [Coin]
+      public var topLoser: [Coin]
+      public var newCoins: [Coin]
     }
-  }
-  
-  public enum ViewWillAppear {
-    public struct Reqeuset { }
-    public struct Response { }
-    public struct ViewModel { }
   }
   
   public enum CategoryTapped {
@@ -39,7 +89,6 @@ public enum SearchFeature {
       
     }
   }
-  
   
   public struct ViewModel {
     public enum SectionType: Int, Comparable {
@@ -102,9 +151,24 @@ extension SearchFeature {
       let current: Double
       let change24h: Double
     }
+    
+    init(
+      rank: Int? = nil,
+      imageUrl: String? = nil,
+      name: String,
+      fullname: String,
+      price: Price? = nil
+    ) {
+      self.rank = rank
+      self.imageUrl = imageUrl
+      self.name = name
+      self.fullname = fullname
+      self.price = price
+    }
   }
   
-  public enum TrendingCategory: Int, Hashable, CustomStringConvertible, ListCategoryable, Comparable {
+  public enum TrendingCategory: Int, Hashable, CustomStringConvertible,
+                                ListCategoryable, Comparable, CaseIterable {
     public var description: String {
       switch self {
       case .coin:
@@ -127,7 +191,7 @@ extension SearchFeature {
     }
   }
   
-  public enum HighlightCategory: Int, CustomStringConvertible, ListCategoryable {
+  public enum HighlightCategory: Int, CustomStringConvertible, ListCategoryable, CaseIterable {
     public var description: String {
       switch self {
       case .topGainers:

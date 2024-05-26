@@ -31,27 +31,21 @@ public final class SearchWorker: SearchWorkerInterface {
       return response.body.json.toDomain()
       
     case .undocumented:
-      fatalError()
+      return .empty
     }
   }
   
   public func getHighlight() async throws -> SearchFeature.FetchHighlight.Response {
     async let topGainerAndLoser = apiClient.topGainerAndLoser()
     async let newCoins = apiClient.newCoins()
-    
+//    
     try Task.checkCancellation()
-    let topGainer: [SearchFeature.RowData]
-    let topLoser: [SearchFeature.RowData]
+    let topGainer: [SearchFeature.Coin]
+    let topLoser: [SearchFeature.Coin]
     switch try await topGainerAndLoser {
     case .ok(let response):
-      topGainer = response.body.json
-        .sorted(by: >)
-        .prefix(7)
-        .map(\.rowData)
-      topLoser = response.body.json
-        .sorted(by: <)
-        .prefix(7)
-        .map(\.rowData)
+      topGainer = response.body.json.sorted(by: >).map { $0.toDomain() }
+      topLoser = response.body.json.sorted(by: <).map { $0.toDomain() }
     case .undocumented(statusCode: let code, let payload):
       topGainer = []
       topLoser = []
@@ -59,13 +53,10 @@ public final class SearchWorker: SearchWorkerInterface {
     }
     
     try Task.checkCancellation()
-    let newCoinList: [SearchFeature.RowData]
+    let newCoinList: [SearchFeature.Coin]
     switch try await newCoins {
     case .ok(let response):
-      newCoinList = response.body.json
-        .prefix(7)
-        .map(\.rowData)
-    
+      newCoinList = response.body.json.map { $0.toDomain() }
     case .undocumented:
       newCoinList = []
       fatalError()
@@ -80,75 +71,61 @@ public final class SearchWorker: SearchWorkerInterface {
 }
 
 extension Components.Schemas.Trending {
-  var minCount: Int {
-    min(nfts.count, coins.count, categories.count)
-  }
-  
   func toDomain() -> SearchFeature.FetchTrending.Response {
     .init(
-      state: [
-        .coin: coins.map(\.rowData),
-        .nft: Array(nfts.map(\.rowData).prefix(minCount)),
-        .category: Array(categories.map(\.rowData).prefix(minCount))
-      ]
+      coins: coins.map { $0.toDomain() },
+      nfts: nfts.map { $0.toDomain() },
+      categories: categories.map { $0.toDomain() }
     )
   }
 }
 
 extension Components.Schemas.Trending.Coin {
-  var rowData: SearchFeature.RowData {
+  func toDomain() -> SearchFeature.Coin {
     .init(
-      rank: marketCapRank,
-      imageUrl: thumb,
-      name: symbol,
-      fullname: name,
-      price: nil
+      id: id,
+      coinId: coinId,
+      name: name,
+      symbol: symbol,
+      marketCapRank: marketCapRank,
+      thumb: thumb
     )
   }
 }
 
 extension Components.Schemas.Trending.NFT {
-  var rowData: SearchFeature.RowData {
+  func toDomain() -> SearchFeature.NFT {
     .init(
-      rank: nil,
-      imageUrl: thumb,
-      name: symbol,
-      fullname: name,
-      price: .init(
-        current: floorPriceInNativeCurrency,
-        change24h: floorPrice24HPercentageChange
-      )
+      id: id,
+      name: name,
+      symbol: symbol,
+      thumb: thumb,
+      floorPriceInNativeCurrency: floorPriceInNativeCurrency,
+      floorPrice24HPercentageChange: floorPrice24HPercentageChange
     )
   }
 }
 
 extension Components.Schemas.Trending.Category {
-  var rowData: SearchFeature.RowData {
+  func toDomain() -> SearchFeature.Category {
     .init(
-      rank: nil,
-      imageUrl: nil,
-      name: "",
-      fullname: name,
-      price: .init(current: 0, change24h: marketCap1HChange)
+      id: id,
+      name: name,
+      marketCap1HChange: marketCap1HChange
     )
   }
 }
 
 extension Components.Schemas.Coin {
-  var rowData: SearchFeature.RowData {
+  func toDomain() -> SearchFeature.Coin {
     .init(
-      rank: marketCapRank,
-      imageUrl: image,
-      name: symbol,
-      fullname: name,
-      price: price
+      id: id,
+      name: name,
+      symbol: symbol,
+      marketCapRank: marketCapRank,
+      thumb: image,
+      currentPrice: currentPrice,
+      priceChangePercentage24H: priceChangePercentage24H
     )
-  }
-  
-  var price: SearchFeature.RowData.Price? {
-    if let current = currentPrice, let priceChangePercentage24H {
-      return .init(current: current, change24h: priceChangePercentage24H)
-    }
-    return nil
   }
 }
