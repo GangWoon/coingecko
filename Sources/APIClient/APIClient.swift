@@ -41,7 +41,7 @@ public  extension APIClient {
                 queries: [
                   .init(name: "vs_currency", value: "usd"),
                   .init(name: "order", value: "market_cap_desc"),
-                  .init(name: "per_page", value: "200"),
+                  .init(name: "per_page", value: "10"),
                   .init(name: "page", value: "1")
                 ]
               )
