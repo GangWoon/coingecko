@@ -15,11 +15,16 @@ let package = Package(
     ),
   ],
   targets: [
-    .target(
-      name: "HTTPClient"),
+    .target(name: "HTTPClient"),
     .target(
       name: "HTTPClientLive",
       dependencies: ["HTTPClient"]
     )
   ]
 )
+
+for target in package.targets {
+  var settings = target.swiftSettings ?? []
+  settings.append(.enableExperimentalFeature("StrictConcurrency"))
+  target.swiftSettings = settings
+}

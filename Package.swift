@@ -32,6 +32,9 @@ let package = Package(
       name: "APIClient",
       dependencies: [
         .product(name: "HTTPClientLive", package: "HTTPClient")
+      ],
+      swiftSettings: [
+        .enableExperimentalFeature("StrictConcurrency")
       ]
     ),
     .target(name: "CombineExt"),
