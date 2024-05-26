@@ -6,6 +6,7 @@ public protocol SearchDataStore {
   var selectedTrendingCategory: SearchFeature.TrendingCategory { get set }
   
   var trendingCategory: [SearchFeature.TrendingCategory] { get }
+  var selectedHighlightCategory: SearchFeature.HighlightCategory { get set }
   var highlightCategory: [SearchFeature.HighlightCategory] { get }
 }
 

@@ -21,15 +21,16 @@ final class SearchListRow: UITableViewCell, ViewStateRemover {
     removeState()
   }
   
-  func build(type: SearchFeature.ViewModel.SectionType, state: State) {
+  func build(_ viewType: ViewType, state: State) {
+    selectionStyle = .none
     let stack = UIStackView()
     stack.isLayoutMarginsRelativeArrangement = true
     stack.directionalLayoutMargins = .searchListRow
-    switch type {
-    case .history:
+    switch viewType {
+    case .primary:
       buildPrimaryStyle(stack, state: state)
-    default:
-      buildSecondaryStyle(stack, state: state)
+    case .secondary:
+      buildSecondaryStyle(stack, viewType: viewType, state: state)
     }
     contentView.addSubview(stack)
     stack.equalToParent()
@@ -42,74 +43,114 @@ final class SearchListRow: UITableViewCell, ViewStateRemover {
   
   private func buildPrimaryStyle(_ stack: UIStackView, state: State) {
     let coinView = CoinView(state: state.coinState)
-    let label = UILabel(
-      text: "#\(state.rank)",
-      textColor: .gray,
-      font: .systemFont(ofSize: 12, weight: .light)
-    )
-    stack.addArrangedSubviews([coinView, .spacing(), label])
+    viewStateRemover.append({ [weak coinView] in
+      coinView?.removeState()
+    })
+    if let rank = state.rank {
+      let label = UILabel(
+        text: "#\(rank)",
+        textColor: .gray,
+        font: .systemFont(ofSize: 12, weight: .light)
+      )
+      stack.addArrangedSubviews([coinView, .spacing(), label])
+    } else {
+      if let priceInfo = state.priceInfo {
+        let priceView = buildChangePriceView(priceInfo: priceInfo)
+        stack.addArrangedSubviews([coinView, .spacing(), priceView])
+      }
+    }
   }
   
-  private func buildSecondaryStyle(_ stack: UIStackView, state: State) {
-    let label = UILabel(
-      text: "\(state.rank)",
-      textColor: .gray,
-      font: .systemFont(ofSize: 12, weight: .light)
-    )
-    stack.addArrangedSubview(label)
-    label.widthAnchor.constraint(equalToConstant: 22).isActive = true
-    
-    stack.addSpacing(12)
+  private func buildSecondaryStyle(
+    _ stack: UIStackView,
+    viewType: ViewType,
+    state: State
+  ) {
+    guard 
+      case .secondary(hasRank: let hasRank) = viewType
+    else { return }
+    if hasRank {
+      let label = UILabel(
+        text: state.rank,
+        textColor: .gray,
+        font: .systemFont(ofSize: 10, weight: .light)
+      )
+      stack.addArrangedSubview(label)
+      label.widthAnchor.constraint(equalToConstant: 22).isActive = true
+      stack.addSpacing(12)
+    }
     
     let coinView = CoinView(state: state.coinState)
+    viewStateRemover.append({ [weak coinView] in
+      coinView?.removeState()
+    })
     stack.addArrangedSubview(coinView)
     
     if let priceInfo = state.priceInfo {
       stack.addSpacing()
-      buildSecondaryAccessoryView(stack, priceInfo: priceInfo)
+      buildPriceStack(stack, priceInfo: priceInfo)
     }
   }
   
-  private func buildSecondaryAccessoryView(_ stack: UIStackView, priceInfo: State.PriceInfo) {
+  private func buildPriceStack(_ stack: UIStackView, priceInfo: State.PriceInfo) {
     let currentPriceLabel = UILabel(
       text: "￦\(priceInfo.current)",
       textColor: .black,
-      font: .systemFont(ofSize: 14, weight: .light)
+      font: .boldSystemFont(ofSize: 14)
     )
+    let priceView = buildChangePriceView(priceInfo: priceInfo)
     
+    let vStack = UIStackView(subviews: [currentPriceLabel, priceView])
+    vStack.alignment = .trailing
+    
+    stack.addArrangedSubview(vStack)
+  }
+  
+  private func buildChangePriceView(priceInfo: State.PriceInfo) -> UIView {
     let imageConfiguration = UIImage.SymbolConfiguration(font: .systemFont(ofSize: 12, weight: .medium))
-    let image = UIImage(systemName: "arrow.up", withConfiguration: imageConfiguration)
+    let flag = priceInfo.change24h > 0
+    let imageName = flag ? "arrow.up" : "arrow.down"
+    let image = UIImage(systemName: imageName, withConfiguration: imageConfiguration)?
+      .withRenderingMode(.alwaysTemplate)
     let imageView = UIImageView(image: image)
+    imageView.tintColor = flag ? .systemGreen : .systemRed
     imageView.contentMode = .scaleAspectFit
     
     let changeLabel = UILabel(
-      text: "\(priceInfo.change24h)%",
-      textColor: .black,
+      text: priceInfo.change24hText,
+      textColor: flag ? .systemGreen : .systemRed,
       font: .systemFont(ofSize: 12, weight: .medium)
     )
     
-    let hStack = UIStackView(
+    let stack = UIStackView(
       .horizontal,
       spacing: 4,
       subviews: [imageView, changeLabel]
     )
-    let vStack = UIStackView(subviews: [currentPriceLabel, hStack])
     
-    stack.addArrangedSubview(vStack)
+    return stack
   }
 }
 
 extension SearchListRow {
   struct State {
-    let rank: String
+    let rank: String?
     let imageUrl: URL?
     let abbreviation: String
     let fullname: String
     let priceInfo: PriceInfo?
     struct PriceInfo: Equatable {
+      var change24hText: String {
+        String(format: "%.1f", abs(change24h)) + "%"
+      }
       let current: Double
       let change24h: Double
     }
+  }
+  
+  enum ViewType {
+    case primary
+    case secondary(hasRank: Bool)
   }
 }
 

@@ -4,7 +4,7 @@ import class UIKit.UIFont
 
 public extension UILabel {
   convenience init(
-    text: String,
+    text: String?,
     textColor: UIColor = .black,
     font: UIFont = .systemFont(ofSize: 14)
   ) {

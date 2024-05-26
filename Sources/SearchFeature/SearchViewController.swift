@@ -72,11 +72,21 @@ public final class SearchViewController: UIViewController {
         let cell = tableView.dequeueReusableCell(type: SearchListRow.self, for: indexPath)
       else { return .init() }
       let sectionType = self.interactor.sectionList[indexPath.section]
-      
-      cell.build(
-        type: sectionType,
-        state: datum.rowState
-      )
+      switch sectionType {
+      case .history:
+        cell.build(.primary, state: datum.rowState)
+      case .trending:
+        cell.build(
+          interactor.selectedTrendingCategory.viewType,
+          state: datum.rowState
+        )
+      case .highlight:
+        
+        cell.build(
+          interactor.selectedHighlightCategory.viewType,
+          state: datum.rowState
+        )
+      }
       
       return cell
     })
@@ -91,6 +101,7 @@ public final class SearchViewController: UIViewController {
     view.backgroundColor = tableView.backgroundColor
   }
 }
+
 extension SearchViewController: UITableViewDelegate {
   public func tableView(
     _ tableView: UITableView,
@@ -105,7 +116,17 @@ extension SearchViewController: UITableViewDelegate {
   ) -> UIView? {
     let sectionType = interactor.sectionList[section]
     let view = tableView.dequeueReusableHeaderFooterView(type: SearchListHeaderView.self)
-    let selectedIndex = 0
+    
+    var selectedIndex: Int = 0
+    switch sectionType {
+    case .history:
+      break
+    case .trending:
+      selectedIndex =  interactor.selectedTrendingCategory.rawValue
+    case .highlight:
+      selectedIndex =  interactor.selectedHighlightCategory.rawValue
+    }
+    
     view?.build(
       title: sectionType.title,
       buttonStates: buildButtonStates(sectionType, section: section),
@@ -137,6 +158,25 @@ extension SearchViewController: UITableViewDelegate {
     case .highlight:
       return build(interactor.highlightCategory)
     }
+  }
+}
+
+extension SearchFeature.TrendingCategory {
+  var viewType: SearchListRow.ViewType {
+    switch self {
+    case .coin:
+      return .secondary(hasRank: true)
+    case .nft:
+      return .secondary(hasRank: false)
+    case .category:
+      return .primary
+    }
+  }
+}
+
+extension SearchFeature.HighlightCategory {
+  var viewType: SearchListRow.ViewType {
+    .secondary(hasRank: self != .newListings)
   }
 }
 

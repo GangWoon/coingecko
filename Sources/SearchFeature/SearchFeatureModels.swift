@@ -78,8 +78,12 @@ public protocol ListCategoryable {
 extension SearchFeature {
   public struct RowData: Hashable {
     var rowState: SearchListRow.State {
-      .init(
-        rank: "\(rank ?? 0)",
+      var tmp: String? = nil
+      if let rank = rank {
+        tmp = String(rank)
+      }
+      return .init(
+        rank: tmp,
         imageUrl: URL(string: imageUrl ?? ""),
         abbreviation: name,
         fullname: fullname,

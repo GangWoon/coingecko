@@ -12,7 +12,7 @@ public final class SearchWorker: SearchWorkerInterface {
   let apiClient: APIClient
   
   public init(
-    apiClient: APIClient = .test
+    apiClient: APIClient = .live
     
   ) {
     self.apiClient = apiClient
@@ -111,7 +111,7 @@ extension Components.Schemas.Trending.NFT {
   var rowData: SearchFeature.RowData {
     .init(
       rank: nil,
-      imageUrl: self.thumb,
+      imageUrl: thumb,
       name: symbol,
       fullname: name,
       price: .init(

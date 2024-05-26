@@ -17,7 +17,12 @@ final public class CoinView: UIView, ViewStateRemover {
   }
   
   private func build() {
-    let imageView = AsyncUIImageView(url: state.imageUrl)
+    let imageView = AsyncUIImageView(
+      url: state.imageUrl,
+      placeholder: UIImage(systemName: "list.bullet")?
+        .withRenderingMode(.alwaysTemplate)
+    )
+    imageView.tintColor = .black
     imageView.translatesAutoresizingMaskIntoConstraints = false
     imageView.contentMode = .scaleAspectFit
     NSLayoutConstraint.activate([
