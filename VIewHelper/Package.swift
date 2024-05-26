@@ -7,10 +7,15 @@ let package = Package(
   products: [
     .library(
       name: "ViewHelper",
-      targets: ["ViewHelper"]),
+      targets: ["ViewHelper"]
+    ),
+    .library(
+      name: "ViewControllerHelper",
+      targets: ["ViewControllerHelper"]
+    ),
   ],
   targets: [
-    .target(
-      name: "ViewHelper"),
+    .target(name: "ViewHelper"),
+    .target(name: "ViewControllerHelper")
   ]
 )

@@ -24,8 +24,9 @@ let package = Package(
       name: "SearchFeature",
       dependencies: [
         "CombineExt",
-        "ViewHelper",
-        "APIClient"
+        "APIClient",
+        .product(name: "ViewHelper", package: "ViewHelper"),
+        .product(name: "ViewControllerHelper", package: "ViewHelper")
       ]
     ),
     .target(

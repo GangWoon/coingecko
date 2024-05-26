@@ -1,4 +1,4 @@
-import UIKit
+import class UIKit.UIViewController
 
 open class BaseViewController: UIViewController {
   public var _task: Task<Void, Never>?
