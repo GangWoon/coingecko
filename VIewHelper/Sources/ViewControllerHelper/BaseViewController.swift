@@ -5,7 +5,10 @@ open class BaseViewController: UIViewController {
   
   open override func viewWillAppear(_ animated: Bool) {
     super.viewWillAppear(animated)
-    _task = Task { await task() }
+    _task = Task {
+      defer { _task = nil }
+      await task()
+    }
   }
   
   open override func viewDidDisappear(_ animated: Bool) {
