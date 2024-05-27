@@ -130,10 +130,25 @@ final class SearchListRow: UITableViewCell, ViewStateRemover {
     
     return stack
   }
+  
+  func buildExpandView(_ state: State, action: UIAction) {
+    var configuration = UIButton.Configuration.plain()
+    configuration.title = state.fullname
+    configuration.titleAlignment = .center
+    configuration.baseForegroundColor = .systemGray
+    
+    let button = UIButton(configuration: configuration, primaryAction: action)
+    viewStateRemover.append { [weak button] in
+      button?.removeFromSuperview()
+    }
+    button.titleLabel?.font = .systemFont(ofSize: 14, weight: .light)
+    contentView.addSubview(button)
+    button.equalToParent()
+  }
 }
 
 extension SearchListRow {
-  struct State {
+  public struct State: Equatable {
     let rank: String?
     let imageUrl: URL?
     let abbreviation: String
@@ -154,7 +169,7 @@ extension SearchListRow {
   }
 }
 
-extension SearchListRow.State {
+private extension SearchListRow.State {
   var coinState: CoinView.State {
     .init(
       imageUrl: imageUrl,
@@ -164,6 +179,16 @@ extension SearchListRow.State {
   }
 }
 
-extension NSDirectionalEdgeInsets {
-  fileprivate static let searchListRow = Self(top: 8, leading: 16, bottom: 8, trailing: 16)
+private extension NSDirectionalEdgeInsets {
+  static let searchListRow = Self(top: 8, leading: 16, bottom: 8, trailing: 16)
+}
+
+private extension SearchListRow.State {
+  static let expandRow = Self(
+    rank: nil,
+    imageUrl: nil,
+    abbreviation: "추가 코인 로드",
+    fullname: "추가 코인 로드",
+    priceInfo: nil
+  )
 }

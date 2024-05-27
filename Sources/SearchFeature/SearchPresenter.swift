@@ -16,60 +16,13 @@ public final class SearchPresenter {
 
 extension SearchPresenter: SearchPresentationLogic {
   public func updateSection(_ response: SearchFeature.UpdateList.ResponseType) {
-    let section: SearchFeature.SectionType
-    let rowData: [SearchFeature.RowData]
-    switch response {
-    case .trending(let response):
-      section = .trending
-      switch response.selectedCategory {
-      case .coin:
-        rowData = response.data.coins.map(\.rowDatum)
-      case .nft:
-        rowData = response.data.nfts.map(\.rowDatum)
-      case .category:
-        rowData = response.data.categories.map(\.rowDatum)
-      }
-    case .highlight(let response):
-      section = .highlight
-      switch response.selectedCategory {
-      case .topGainers:
-        rowData = response.data.topGainer.map(\.rowDatum)
-      case .topLosers:
-        rowData = response.data.topLoser.map(\.rowDatum)
-      case .newListings:
-        rowData = response.data.newCoins.prefix(7).map(\.rowDatum)
-      }
-    }
-    
-    viewController?.reloadSection(rowData, section: section)
+    viewController?.reloadSection(response.rowData, section: response.viewType)
   }
   
   public func updateList(_ response: SearchFeature.UpdateList.Response) {
     var dataSource: [SearchFeature.SectionType: [SearchFeature.RowData]] = [:]
-    switch response.selectedTrendingCategory {
-    case .coin:
-      dataSource[.trending] = response.trendingResponse.coins.map(\.rowDatum)
-    case .nft:
-      dataSource[.trending] = response.trendingResponse.nfts.map(\.rowDatum)
-    case .category:
-      dataSource[.trending] = response.trendingResponse.categories.map(\.rowDatum)
-    }
-    
-    switch response.selectedHighlightCategory {
-    case .topGainers:
-      dataSource[.highlight] = response.highlightResponse.topGainer
-        .prefix(7)
-        .map(\.rowDatum)
-    case .topLosers:
-      dataSource[.highlight] = response.highlightResponse.topLoser
-        .prefix(7)
-        .map(\.rowDatum)
-    case .newListings:
-      dataSource[.highlight] = response.highlightResponse.newCoins
-        .prefix(7)
-        .map(\.rowDatum)
-    }
-    
+    dataSource[.trending] = response.trending.rowData
+    dataSource[.highlight] = response.highlight.rowData
     viewController?.applySnapshot(.init(dataSource: dataSource))
   }
 }
@@ -115,4 +68,63 @@ private extension SearchFeature.Category {
       price: .init(current: 0, change24h: marketCap1HChange)
     )
   }
+}
+
+private extension SearchFeature.UpdateList.ResponseType {
+  var rowData: [SearchFeature.RowData] {
+    switch self {
+    case .trending(let trending):
+      return trending.rowData
+    case .highlight(let highlight):
+      return highlight.rowData
+    }
+  }
+  
+  var viewType: SearchFeature.SectionType {
+    switch self {
+    case .trending:
+      return .trending
+    case .highlight:
+      return .highlight
+    }
+  }
+}
+
+private extension SearchFeature.UpdateList.Response.Trending {
+  var rowData: [SearchFeature.RowData] {
+    switch selectedCategory {
+    case .coin:
+      let rowData = data.coins.map(\.rowDatum)
+      return isExpanded 
+      ? rowData
+      : Array(rowData.prefix(7)) + [.expanedRow]
+    case .nft:
+      return data.nfts.map(\.rowDatum)
+    case .category:
+      return data.categories.map(\.rowDatum)
+    }
+  }
+}
+
+private extension SearchFeature.UpdateList.Response.Highlight {
+  var rowData: [SearchFeature.RowData] {
+    switch selectedCategory {
+    case .topGainers:
+      return data.topGainer
+        .prefix(7)
+        .map(\.rowDatum)
+    case .topLosers:
+      return data.topLoser
+        .prefix(7)
+        .map(\.rowDatum)
+    case .newListings:
+      return data.newCoins
+        .prefix(7)
+        .map(\.rowDatum)
+    }
+  }
+}
+
+extension SearchFeature.RowData {
+  static let expanedRow = Self(name: "추가 코인 로드", fullname: "추가 코인 로드")
 }

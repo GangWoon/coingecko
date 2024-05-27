@@ -13,9 +13,9 @@ public protocol SearchDisplayLogic: AnyObject {
 }
 
 public final class SearchViewController: BaseViewController {
-  private var searchField: SearchTextField!
-  var interactor: any SearchDataStore & SearchBusinessLogic
+  public var interactor: any SearchDataStore & SearchBusinessLogic
   
+  private var searchField: SearchTextField!
   private var datasource: UITableViewDiffableDataSource<SearchFeature.SectionType, SearchFeature.RowData>!
   private var cancellables: Set<AnyCancellable> = []
   
@@ -66,34 +66,11 @@ public final class SearchViewController: BaseViewController {
   
   private func buildList(bottmAnchor: NSLayoutYAxisAnchor) {
     let tableView = UITableView(frame: .zero, style: .insetGrouped)
+    buildListDataSource(tableView: tableView)
     tableView.register(type: SearchListRow.self)
     tableView.registerForHeaderFooterView(type: SearchListHeaderView.self)
     tableView.delegate = self
     view.addSubview(tableView)
-    datasource = .init(tableView: tableView, cellProvider: { [weak self] tableView, indexPath, datum in
-      guard
-        let self,
-        let cell = tableView.dequeueReusableCell(type: SearchListRow.self, for: indexPath)
-      else { return .init() }
-      let sectionType = self.interactor.sectionList[indexPath.section]
-      switch sectionType {
-      case .history:
-        cell.build(.primary, state: datum.rowState)
-      case .trending:
-        cell.build(
-          interactor.selectedTrendingCategory.viewType,
-          state: datum.rowState
-        )
-      case .highlight:
-        
-        cell.build(
-          interactor.selectedHighlightCategory.viewType,
-          state: datum.rowState
-        )
-      }
-      
-      return cell
-    })
     tableView.translatesAutoresizingMaskIntoConstraints = false
     NSLayoutConstraint.activate([
       tableView.topAnchor.constraint(equalTo: bottmAnchor),
@@ -101,8 +78,30 @@ public final class SearchViewController: BaseViewController {
       tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
       tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
     ])
-    
     view.backgroundColor = tableView.backgroundColor
+  }
+  
+  private func buildListDataSource(tableView: UITableView) {
+    datasource = .init(
+      tableView: tableView,
+      cellProvider: { [weak self] tableView, indexPath, datum in
+        guard let self else { return .init() }
+        let cell = tableView.dequeueReusableCell(type: SearchListRow.self, for: indexPath)
+        if datum == .expanedRow {
+          cell?.buildExpandView(
+            datum.rowState,
+            action: .init { [weak self] _ in
+              self?.interactor.tappedExpandRow()
+            }
+          )
+          return cell
+        }
+        let sectionType = self.interactor.sectionList[indexPath.section]
+        cell?.build(rowType(sectionType), state: datum.rowState)
+        
+        return cell
+      }
+    )
   }
 }
 
@@ -110,9 +109,7 @@ extension SearchViewController: UITableViewDelegate {
   public func tableView(
     _ tableView: UITableView,
     heightForRowAt indexPath: IndexPath
-  ) -> CGFloat {
-    60
-  }
+  ) -> CGFloat { 60 }
   
   public func tableView(
     _ tableView: UITableView,
@@ -120,7 +117,6 @@ extension SearchViewController: UITableViewDelegate {
   ) -> UIView? {
     let sectionType = interactor.sectionList[section]
     let view = tableView.dequeueReusableHeaderFooterView(type: SearchListHeaderView.self)
-    
     var selectedIndex: Int = 0
     switch sectionType {
     case .history:
@@ -130,12 +126,12 @@ extension SearchViewController: UITableViewDelegate {
     case .highlight:
       selectedIndex =  interactor.selectedHighlightCategory.rawValue
     }
-    
     view?.build(
       title: sectionType.title,
       buttonStates: buildButtonStates(sectionType, section: section),
       selectedItem: selectedIndex
     )
+    
     return view
   }
   
@@ -143,7 +139,7 @@ extension SearchViewController: UITableViewDelegate {
     _ sectionType: SearchFeature.SectionType,
     section: Int
   ) -> [SearchListHeaderView.ButtonState] {
-    let build: ([ListCategoryable]) -> [SearchListHeaderView.ButtonState] = { list in
+    let build: ([String]) -> [SearchListHeaderView.ButtonState] = { list in
       list.enumerated()
         .map { row, value in
             .init(
@@ -158,46 +154,17 @@ extension SearchViewController: UITableViewDelegate {
     case .history:
       return []
     case .trending:
-      return build(interactor.trendingCategory)
+      return build(interactor.trendingCategory.map(\.description))
     case .highlight:
-      return build(interactor.highlightCategory)
+      return build(interactor.highlightCategory.map(\.description))
     }
   }
 }
-
-extension SearchFeature.TrendingCategory {
-  var viewType: SearchListRow.ViewType {
-    switch self {
-    case .coin:
-      return .secondary(hasRank: true)
-    case .nft:
-      return .secondary(hasRank: false)
-    case .category:
-      return .primary
-    }
-  }
-}
-
-extension SearchFeature.HighlightCategory {
-  var viewType: SearchListRow.ViewType {
-    .secondary(hasRank: self != .newListings)
-  }
-}
-
-#if DEBUG
-@available(iOS 17.0, *)
-#Preview {
-  let vc = SearchViewController(
-    interactor: SearchInteractor())
-  return vc
-}
-#endif
 
 extension SearchViewController: SearchDisplayLogic {
   public func applySnapshot(_ viewModel: SearchFeature.UpdateList.ViewModel) {
     let items = viewModel.dataSource
       .sorted { $0.key.rawValue < $1.key.rawValue }
-    
     var snapShot = NSDiffableDataSourceSnapshot<SearchFeature.SectionType, SearchFeature.RowData>()
     snapShot.appendSections(items.map(\.key))
     items.forEach { key, value in
@@ -213,10 +180,48 @@ extension SearchViewController: SearchDisplayLogic {
     var snapshot = datasource.snapshot()
     let items = snapshot.itemIdentifiers(inSection: section)
     snapshot.deleteItems(items)
-    
     snapshot.appendItems(viewModel, toSection: section)
     datasource.apply(snapshot)
   }
 }
 
+private extension SearchViewController {
+  func rowType(_ section: SearchFeature.SectionType) -> SearchListRow.ViewType {
+    switch section {
+    case .history:
+      return .primary
+    case .trending:
+      return interactor.selectedTrendingCategory.viewType
+    case .highlight:
+      return interactor.selectedHighlightCategory.viewType
+    }
+  }
+}
 
+private extension SearchFeature.TrendingCategory {
+  var viewType: SearchListRow.ViewType {
+    switch self {
+    case .coin:
+      return .secondary(hasRank: true)
+    case .nft:
+      return .secondary(hasRank: false)
+    case .category:
+      return .primary
+    }
+  }
+}
+
+private extension SearchFeature.HighlightCategory {
+  var viewType: SearchListRow.ViewType {
+    .secondary(hasRank: self != .newListings)
+  }
+}
+
+#if DEBUG
+@available(iOS 17.0, *)
+#Preview {
+  let vc = SearchViewController(
+    interactor: SearchInteractor())
+  return vc
+}
+#endif

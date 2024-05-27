@@ -1,5 +1,5 @@
-import APIClient
 import Foundation
+import APIClient
 
 public enum SearchFeature {
   public enum FetchTrending {
@@ -11,38 +11,49 @@ public enum SearchFeature {
     }
   }
   
+  public enum FetchHighlight {
+    public struct Response {
+      static let empty = Self(topGainer: [], topLoser: [], newCoins: [])
+      public var topGainer: [Coin]
+      public var topLoser: [Coin]
+      public var newCoins: [Coin]
+    }
+  }
+  
   public enum UpdateList {
     public enum ResponseType {
-      case trending(Trending.Response)
-      case highlight(Highlight.Response)
+      case trending(Response.Trending)
+      case highlight(Response.Highlight)
     }
     
     public struct Response {
-      var trendingResponse: FetchTrending.Response
-      var selectedTrendingCategory: TrendingCategory
-      var highlightResponse: FetchHighlight.Response
-      var selectedHighlightCategory: HighlightCategory
+      var trending: Trending
+      public struct Trending {
+        var data: FetchTrending.Response
+        var isExpanded: Bool
+        var selectedCategory: TrendingCategory
+      }
+      
+      var highlight: Highlight
+      public struct Highlight {
+        var data: FetchHighlight.Response
+        var selectedCategory: HighlightCategory
+      }
     }
     
     public struct ViewModel {
       var dataSource: [SearchFeature.SectionType: [RowData]]
     }
-    
-    public enum Trending {
-      public struct Response {
-        var data: FetchTrending.Response
-        var selectedCategory: TrendingCategory
-      }
-    }
-    
-    public enum Highlight {
-      public struct Response {
-        var data: FetchHighlight.Response
-        var selectedCategory: HighlightCategory
-      }
-    }
   }
   
+  public enum CategoryTapped {
+    public struct Request {
+      var indexPath: IndexPath
+    }
+  }
+}
+
+extension SearchFeature {
   public struct Coin {
     public var id: String
     public var coinId: Int?
@@ -68,54 +79,6 @@ public enum SearchFeature {
     public var name: String
     public var marketCap1HChange: Double
   }
-  
-  public enum FetchHighlight {
-    public struct Response {
-      static let empty = Self(topGainer: [], topLoser: [], newCoins: [])
-      public var topGainer: [Coin]
-      public var topLoser: [Coin]
-      public var newCoins: [Coin]
-    }
-  }
-  
-  public enum CategoryTapped {
-    public struct Request {
-      var indexPath: IndexPath
-    }
-    public struct Response {
-      var dataSource: [SearchFeature.SectionType : [SearchFeature.RowData]]
-    }
-    public struct ViewModel {
-      
-    }
-  }
-  public enum SectionType: Int, Comparable {
-    var title: String {
-      switch self {
-      case .history:
-        return "검색기록"
-      case .trending:
-        return "인기"
-      case .highlight:
-        return "하이라이트"
-      }
-    }
-    case history = 0
-    case trending
-    case highlight
-    
-    public static func < (
-      lhs: SearchFeature.SectionType,
-      rhs: SearchFeature.SectionType
-    ) -> Bool {
-      lhs.rawValue < rhs.rawValue
-    }
-  }
-}
-
-
-public protocol ListCategoryable {
-  var description: String { get }
 }
 
 extension SearchFeature {
@@ -161,8 +124,30 @@ extension SearchFeature {
     }
   }
   
-  public enum TrendingCategory: Int, Hashable, CustomStringConvertible,
-                                ListCategoryable, Comparable, CaseIterable {
+  public enum SectionType: Int, Comparable {
+    var title: String {
+      switch self {
+      case .history:
+        return "검색기록"
+      case .trending:
+        return "인기"
+      case .highlight:
+        return "하이라이트"
+      }
+    }
+    case history = 0
+    case trending
+    case highlight
+    
+    public static func < (
+      lhs: SearchFeature.SectionType,
+      rhs: SearchFeature.SectionType
+    ) -> Bool {
+      lhs.rawValue < rhs.rawValue
+    }
+  }
+  
+  public enum TrendingCategory: Int, Hashable, CustomStringConvertible, Comparable, CaseIterable {
     public var description: String {
       switch self {
       case .coin:
@@ -185,7 +170,7 @@ extension SearchFeature {
     }
   }
   
-  public enum HighlightCategory: Int, CustomStringConvertible, ListCategoryable, CaseIterable {
+  public enum HighlightCategory: Int, CustomStringConvertible, CaseIterable {
     public var description: String {
       switch self {
       case .topGainers:

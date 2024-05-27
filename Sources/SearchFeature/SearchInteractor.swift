@@ -3,10 +3,10 @@ import Foundation
 public protocol SearchDataStore {
   var text: String { get }
   var sectionList: [SearchFeature.SectionType] { get }
-  var selectedTrendingCategory: SearchFeature.TrendingCategory { get set }
+  var selectedTrendingCategory: SearchFeature.TrendingCategory { get }
   
   var trendingCategory: [SearchFeature.TrendingCategory] { get }
-  var selectedHighlightCategory: SearchFeature.HighlightCategory { get set }
+  var selectedHighlightCategory: SearchFeature.HighlightCategory { get }
   var highlightCategory: [SearchFeature.HighlightCategory] { get }
 }
 
@@ -15,6 +15,7 @@ public protocol SearchBusinessLogic {
   
   func searchFieldChanged(_ text: String?)
   func categoryTapped(_ request: SearchFeature.CategoryTapped.Request)
+  func tappedExpandRow()
 }
 
 public final class SearchInteractor: SearchDataStore {
@@ -29,6 +30,13 @@ public final class SearchInteractor: SearchDataStore {
     
     return list
   }
+  var hasTrendingData: Bool {
+    !trendingCoins.isEmpty || !trendingNFTs.isEmpty || !trendingCategories.isEmpty
+  }
+  var hasHighlightData: Bool {
+    !trendingCoins.isEmpty || !trendingNFTs.isEmpty || !trendingCategories.isEmpty
+  }
+  
   public var trendingCategory: [SearchFeature.TrendingCategory] {
     SearchFeature.TrendingCategory.allCases
   }
@@ -36,37 +44,16 @@ public final class SearchInteractor: SearchDataStore {
     SearchFeature.HighlightCategory.allCases
   }
   
-  public var dataSource: [SearchFeature.SectionType : [SearchFeature.RowData]] = [:]
-  
   // MARK: - State
   public var text: String = ""
   
-  var hasTrendingData: Bool {
-    !trendingCoins.isEmpty || !trendingNFTs.isEmpty || !trendingCategories.isEmpty
-  }
+  public var isTrendingExpanded: Bool = false
   public var selectedTrendingCategory: SearchFeature.TrendingCategory = .coin
-  var trendingResponse: SearchFeature.FetchTrending.Response {
-    .init(
-      coins: trendingCoins,
-      nfts: trendingNFTs,
-      categories: trendingCategories
-    )
-  }
   public var trendingCoins: [SearchFeature.Coin] = []
   public var trendingNFTs: [SearchFeature.NFT] = []
   public var trendingCategories: [SearchFeature.Category] = []
   
-  var hasHighlightData: Bool {
-    !trendingCoins.isEmpty || !trendingNFTs.isEmpty || !trendingCategories.isEmpty
-  }
   public var selectedHighlightCategory: SearchFeature.HighlightCategory = .topGainers
-  var highlightResponse: SearchFeature.FetchHighlight.Response {
-    .init(
-      topGainer: topGainer,
-      topLoser: topLoser,
-      newCoins: newCoins
-    )
-  }
   public var topGainer: [SearchFeature.Coin] = []
   public var topLoser: [SearchFeature.Coin] = []
   public var newCoins: [SearchFeature.Coin] = []
@@ -75,11 +62,33 @@ public final class SearchInteractor: SearchDataStore {
   public var presenter: (any SearchPresentationLogic)?
   public var worker: (any SearchWorkerInterface)!
   
-  public init() {
-  }
+  public init() { }
 }
 
 extension SearchInteractor: SearchBusinessLogic {
+  public func prepare() async {
+    if !worker.loadSearchHistory().isEmpty {
+      
+    }
+    do {
+      let trendingResponse = try await worker.getTrending()
+      trendingCoins = trendingResponse.coins
+      trendingNFTs = trendingResponse.nfts
+      trendingCategories = trendingResponse.categories
+      
+      let highlightResponse = try await worker.getHighlight()
+      topGainer = highlightResponse.topGainer
+      topLoser = highlightResponse.topLoser
+      newCoins = highlightResponse.newCoins
+      
+      await presenter?.updateList(updateListResponse)
+    } catch is CancellationError {
+      
+    } catch {
+      
+    }
+  }
+  
   public func searchFieldChanged(_ text: String?) {
     if let text {
       self.text = text
@@ -95,49 +104,59 @@ extension SearchInteractor: SearchBusinessLogic {
     case .trending:
       selectedTrendingCategory = SearchFeature.TrendingCategory(rawValue: request.indexPath.row) ?? selectedTrendingCategory
       Task {
-        await presenter?
-          .updateSection(
-            .trending(.init(data: trendingResponse, selectedCategory: selectedTrendingCategory))
-          )
+        await presenter?.updateSection(.trending(updateTrending))
       }
     case .highlight:
       selectedHighlightCategory = SearchFeature.HighlightCategory(rawValue: request.indexPath.row) ?? selectedHighlightCategory
       Task {
-        await presenter?
-          .updateSection(
-            .highlight(.init(data: highlightResponse, selectedCategory: selectedHighlightCategory))
-          )
+        await presenter?.updateSection(.highlight(updateHighlight))
       }
     }
   }
   
-  public func prepare() async {
-    if !worker.loadSearchHistory().isEmpty {
-      dataSource[.history] = []
+  public func tappedExpandRow() {
+    isTrendingExpanded = true
+    Task {
+      await presenter?.updateSection(.trending(updateTrending))
     }
-    do {
-      let trendingResponse = try await worker.getTrending()
-      trendingCoins = trendingResponse.coins
-      trendingNFTs = trendingResponse.nfts
-      trendingCategories = trendingResponse.categories
-      
-      let highlightResponse = try await worker.getHighlight()
-      topGainer = highlightResponse.topGainer
-      topLoser = highlightResponse.topLoser
-      newCoins = highlightResponse.newCoins
-      
-      await presenter?.updateList(
-        .init(
-          trendingResponse: trendingResponse,
-          selectedTrendingCategory: selectedTrendingCategory,
-          highlightResponse: highlightResponse,
-          selectedHighlightCategory: selectedHighlightCategory
-        )
-      )
-    } catch is CancellationError {
-      
-    } catch {
-      
-    }
+  }
+}
+
+private extension SearchInteractor {
+  var updateListResponse: SearchFeature.UpdateList.Response {
+    .init(
+      trending: updateTrending,
+      highlight: updateHighlight
+    )
+  }
+  
+  var updateTrending: SearchFeature.UpdateList.Response.Trending {
+    .init(
+      data: trendingResponse,
+      isExpanded: isTrendingExpanded,
+      selectedCategory: selectedTrendingCategory
+    )
+  }
+  var trendingResponse: SearchFeature.FetchTrending.Response {
+    .init(
+      coins: trendingCoins,
+      nfts: trendingNFTs,
+      categories: trendingCategories
+    )
+  }
+  
+  
+  var updateHighlight: SearchFeature.UpdateList.Response.Highlight {
+    .init(
+      data: highlightResponse,
+      selectedCategory: selectedHighlightCategory
+    )
+  }
+  var highlightResponse: SearchFeature.FetchHighlight.Response {
+    .init(
+      topGainer: topGainer,
+      topLoser: topLoser,
+      newCoins: newCoins
+    )
   }
 }
