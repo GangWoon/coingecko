@@ -34,13 +34,14 @@ public class AsyncUIImageView: UIImageView {
     cancel()
   }
   
-  public func cancel() {
+  private func cancel() {
     task?.cancel()
     task = nil
   }
   
   private func build() {
     task = Task {
+      defer { task = nil }
       do {
         guard let url else { throw InternalError.undefined }
         let data = try await cache.fetch(url)
