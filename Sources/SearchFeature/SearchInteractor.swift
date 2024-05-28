@@ -32,6 +32,7 @@ public final class SearchInteractor: SearchDataStore {
   // MARK: - Interface
   public var worker: any SearchWorkerInterface
   public var presenter: (any SearchPresentationLogic)?
+  /// var navigate: (model) -> Void
   
   public init(
     state: State = .init(),

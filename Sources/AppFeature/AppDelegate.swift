@@ -6,7 +6,7 @@ public class AppDelegate: NSObject, UIApplicationDelegate {
   
   public func applicationDidFinishLaunching(_ application: UIApplication) {
     window = .init()
-    window?.rootViewController = SearchSceneBuilder().build()
+    window?.rootViewController = SearchSceneBuilder(dependency: .live).build()
     window?.makeKeyAndVisible()
   }
 }
