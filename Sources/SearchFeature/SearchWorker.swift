@@ -11,10 +11,7 @@ public protocol SearchWorkerInterface: AnyObject {
 public final class SearchWorker: SearchWorkerInterface {
   let apiClient: APIClient
   
-  public init(
-    apiClient: APIClient = .live
-    
-  ) {
+  public init(apiClient: APIClient = .live) {
     self.apiClient = apiClient
   }
   
@@ -70,7 +67,7 @@ public final class SearchWorker: SearchWorkerInterface {
   }
 }
 
-extension Components.Schemas.Trending {
+private extension Components.Schemas.Trending {
   func toDomain() -> SearchFeature.FetchTrending.Response {
     .init(
       coins: coins.map { $0.toDomain() },
@@ -80,7 +77,7 @@ extension Components.Schemas.Trending {
   }
 }
 
-extension Components.Schemas.Trending.Coin {
+private extension Components.Schemas.Trending.Coin {
   func toDomain() -> SearchFeature.Coin {
     .init(
       id: id,
@@ -93,7 +90,7 @@ extension Components.Schemas.Trending.Coin {
   }
 }
 
-extension Components.Schemas.Trending.NFT {
+private extension Components.Schemas.Trending.NFT {
   func toDomain() -> SearchFeature.NFT {
     .init(
       id: id,
@@ -106,7 +103,7 @@ extension Components.Schemas.Trending.NFT {
   }
 }
 
-extension Components.Schemas.Trending.Category {
+private extension Components.Schemas.Trending.Category {
   func toDomain() -> SearchFeature.Category {
     .init(
       id: id,
@@ -116,7 +113,7 @@ extension Components.Schemas.Trending.Category {
   }
 }
 
-extension Components.Schemas.Coin {
+private extension Components.Schemas.Coin {
   func toDomain() -> SearchFeature.Coin {
     .init(
       id: id,

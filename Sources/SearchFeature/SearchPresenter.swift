@@ -15,7 +15,6 @@ public protocol SearchDisplayLogic: AnyObject {
   )
 }
 
-
 public final class SearchPresenter {
   public weak var viewController: SearchDisplayLogic?
   
