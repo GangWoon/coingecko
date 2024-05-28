@@ -231,11 +231,12 @@ private extension SearchFeature.RowData.Price {
   }
 }
 
-//#if DEBUG
-//@available(iOS 17.0, *)
-//#Preview {
-//  let vc = SearchViewController(
-//    interactor: SearchInteractor())
-//  return vc
-//}
-//#endif
+#if DEBUG
+@available(iOS 17.0, *)
+#Preview {
+  let builder = SearchSceneBuilder(
+    dependency: .init(work: SearchWorker(apiClient: .test))
+  )
+  return builder.build()
+}
+#endif

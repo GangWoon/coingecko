@@ -73,7 +73,11 @@ extension CoinView {
 @available(iOS 17.0, *)
 #Preview {
   let view = CoinView(
-    state: .init(imageUrl: .init(string: ""), abbreviation: "ETH", fullname: "이더리움")
+    state: .init(
+      imageUrl: .init(string: ""),
+      abbreviation: "ETH",
+      fullname: "이더리움"
+    )
   )
   
   return view
