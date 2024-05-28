@@ -1,19 +1,6 @@
 import ViewHelper
 import UIKit
 
-protocol ViewStateRemover: AnyObject {
-  var viewStateRemover: [() -> ()?] { get set }
-  func removeState()
-}
-
-extension ViewStateRemover {
-  func removeState() {
-    viewStateRemover
-      .forEach { $0() }
-    viewStateRemover = []
-  }
-}
-
 final class SearchListRow: UITableViewCell, ViewStateRemover {
   var viewStateRemover: [() -> ()?] = []
   
