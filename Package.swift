@@ -17,14 +17,21 @@ let package = Package(
     .target(
       name: "AppFeature",
       dependencies: [
-        "SearchFeature"
+        "SearchFeature",
+        "SearchFeatureView"
       ]
     ),
     .target(
       name: "SearchFeature",
       dependencies: [
+        "APIClient"
+      ]
+    ),
+    .target(
+      name: "SearchFeatureView",
+      dependencies: [
+        "SearchFeature",
         "CombineExt",
-        "APIClient",
         .product(name: "ViewHelper", package: "ViewHelper"),
         .product(name: "ViewControllerHelper", package: "ViewHelper")
       ]

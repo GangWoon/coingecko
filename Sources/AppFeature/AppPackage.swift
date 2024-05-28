@@ -1,3 +1,4 @@
+import SearchFeatureView
 import SearchFeature
 import UIKit
 
@@ -22,5 +23,4 @@ public class AppDelegate: NSObject, UIApplicationDelegate {
     
     return vc
   }
-
 }

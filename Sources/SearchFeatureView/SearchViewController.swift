@@ -2,15 +2,7 @@ import ViewControllerHelper
 import ViewHelper
 import Combine
 import UIKit
-
-@MainActor
-public protocol SearchDisplayLogic: AnyObject {
-  func applySnapshot(_ viewModel: SearchFeature.UpdateList.ViewModel)
-  func reloadSection(
-    _ viewModel: [SearchFeature.RowData],
-    section: SearchFeature.SectionType
-  )
-}
+import SearchFeature
 
 public final class SearchViewController: BaseViewController {
   public var interactor: any SearchDataStore & SearchBusinessLogic
@@ -214,6 +206,24 @@ private extension SearchFeature.TrendingCategory {
 private extension SearchFeature.HighlightCategory {
   var viewType: SearchListRow.ViewType {
     .secondary(hasRank: self != .newListings)
+  }
+}
+
+private extension SearchFeature.RowData {
+  var rowState: SearchListRow.State {
+    return .init(
+      rank: rank == nil ? nil : String(rank!),
+      imageUrl: URL(string: imageUrl ?? ""),
+      abbreviation: name,
+      fullname: fullname,
+      priceInfo: price?.rowState
+    )
+  }
+}
+
+private extension SearchFeature.RowData.Price {
+  var rowState: SearchListRow.State.PriceInfo {
+    .init(current: current, change24h: change24h)
   }
 }
 

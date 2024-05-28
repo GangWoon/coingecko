@@ -42,13 +42,14 @@ public enum SearchFeature {
     }
     
     public struct ViewModel {
-      var dataSource: [SearchFeature.SectionType: [RowData]]
+      public var dataSource: [SearchFeature.SectionType: [RowData]]
     }
   }
   
   public enum CategoryTapped {
     public struct Request {
       var indexPath: IndexPath
+      public init(indexPath: IndexPath) { self.indexPath = indexPath }
     }
   }
 }
@@ -83,30 +84,14 @@ extension SearchFeature {
 
 extension SearchFeature {
   public struct RowData: Hashable {
-    var rowState: SearchListRow.State {
-      var tmp: String? = nil
-      if let rank = rank {
-        tmp = String(rank)
-      }
-      return .init(
-        rank: tmp,
-        imageUrl: URL(string: imageUrl ?? ""),
-        abbreviation: name,
-        fullname: fullname,
-        priceInfo: price?.rowState
-      )
-    }
-    let rank: Int?
-    let imageUrl: String?
-    let name: String
-    let fullname: String
-    let price: Price?
+    public let rank: Int?
+    public let imageUrl: String?
+    public let name: String
+    public let fullname: String
+    public let price: Price?
     public struct Price: Hashable {
-      var rowState: SearchListRow.State.PriceInfo {
-        .init(current: current, change24h: change24h)
-      }
-      let current: Double
-      let change24h: Double
+      public let current: Double
+      public let change24h: Double
     }
     
     init(
@@ -125,7 +110,7 @@ extension SearchFeature {
   }
   
   public enum SectionType: Int, Comparable {
-    var title: String {
+    public var title: String {
       switch self {
       case .history:
         return "검색기록"

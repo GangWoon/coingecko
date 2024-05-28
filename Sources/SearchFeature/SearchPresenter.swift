@@ -6,6 +6,16 @@ public protocol SearchPresentationLogic: AnyObject {
   func updateSection(_ response: SearchFeature.UpdateList.ResponseType)
 }
 
+@MainActor
+public protocol SearchDisplayLogic: AnyObject {
+  func applySnapshot(_ viewModel: SearchFeature.UpdateList.ViewModel)
+  func reloadSection(
+    _ viewModel: [SearchFeature.RowData],
+    section: SearchFeature.SectionType
+  )
+}
+
+
 public final class SearchPresenter {
   public weak var viewController: SearchDisplayLogic?
   
@@ -125,6 +135,6 @@ private extension SearchFeature.UpdateList.Response.Highlight {
   }
 }
 
-extension SearchFeature.RowData {
+public extension SearchFeature.RowData {
   static let expanedRow = Self(name: "추가 코인 로드", fullname: "추가 코인 로드")
 }
