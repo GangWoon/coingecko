@@ -31,9 +31,6 @@ final class SearchListRow: UITableViewCell, ViewStateRemover {
   
   private func buildPrimaryStyle(_ stack: UIStackView, state: State) {
     let coinView = CoinView(state: state.coinState)
-    viewStateRemover.append({ [weak coinView] in
-      coinView?.removeState()
-    })
     if let rank = state.rank {
       let label = UILabel(
         text: "#\(rank)",
@@ -69,9 +66,6 @@ final class SearchListRow: UITableViewCell, ViewStateRemover {
     }
     
     let coinView = CoinView(state: state.coinState)
-    viewStateRemover.append({ [weak coinView] in
-      coinView?.removeState()
-    })
     stack.addArrangedSubview(coinView)
     
     if let priceInfo = state.priceInfo {

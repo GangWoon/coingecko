@@ -7,7 +7,6 @@ import SearchFeature
 public final class SearchViewController: BaseViewController {
   public var interactor: any SearchDataStore & SearchBusinessLogic
   
-  private var searchField: SearchTextField!
   private var datasource: UITableViewDiffableDataSource<SearchFeature.SectionType, SearchFeature.RowData>!
   private var cancellables: Set<AnyCancellable> = []
   
@@ -51,7 +50,6 @@ public final class SearchViewController: BaseViewController {
       }
     }
     textField.addAction(action, for: .valueChanged)
-    searchField = textField
     
     return textField.bottomAnchor
   }
@@ -131,25 +129,16 @@ extension SearchViewController: UITableViewDelegate {
     _ sectionType: SearchFeature.SectionType,
     section: Int
   ) -> [SearchListHeaderView.ButtonState] {
-    let build: ([String]) -> [SearchListHeaderView.ButtonState] = { list in
-      list.enumerated()
-        .map { row, value in
-            .init(
-              title: value.description,
-              action: { [weak self] in
-                self?.interactor.categoryTapped(.init(indexPath: .init(row: row, section: section)))
-              }
-            )
-        }
-    }
-    switch sectionType {
-    case .history:
-      return []
-    case .trending:
-      return build(interactor.trendingCategory.map(\.description))
-    case .highlight:
-      return build(interactor.highlightCategory.map(\.description))
-    }
+    sectionType.category
+      .enumerated()
+      .map { row, state in
+          .init(
+            title: state,
+            action: { [weak self] in
+              self?.interactor.categoryTapped(.init(indexPath: .init(row: row, section: section)))
+            }
+          )
+      }
   }
 }
 
@@ -186,6 +175,21 @@ private extension SearchViewController {
       return interactor.selectedTrendingCategory.viewType
     case .highlight:
       return interactor.selectedHighlightCategory.viewType
+    }
+  }
+}
+
+private extension SearchFeature.SectionType {
+  var category: [String] {
+    switch self {
+    case .history:
+      return []
+    case .trending:
+      return SearchFeature.TrendingCategory.allCases
+        .map(\.description)
+    case .highlight:
+      return SearchFeature.HighlightCategory.allCases
+        .map(\.description)
     }
   }
 }
@@ -227,11 +231,11 @@ private extension SearchFeature.RowData.Price {
   }
 }
 
-#if DEBUG
-@available(iOS 17.0, *)
-#Preview {
-  let vc = SearchViewController(
-    interactor: SearchInteractor())
-  return vc
-}
-#endif
+//#if DEBUG
+//@available(iOS 17.0, *)
+//#Preview {
+//  let vc = SearchViewController(
+//    interactor: SearchInteractor())
+//  return vc
+//}
+//#endif

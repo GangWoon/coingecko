@@ -1,8 +1,7 @@
 import ViewHelper
 import UIKit
 
-final public class CoinView: UIView, ViewStateRemover {
-  public var viewStateRemover: [() -> ()?] = []
+final public class CoinView: UIView {
   private let state: State
   
   public init(state: State) {
@@ -47,13 +46,6 @@ final public class CoinView: UIView, ViewStateRemover {
     stack.spacing = 6
     addSubview(stack)
     stack.equalToParent()
-    
-    let removeState = { [weak imageView, weak label, weak fullnameLabel] in
-      imageView?.image = nil
-      label?.text = nil
-      fullnameLabel?.text = nil
-    }
-    viewStateRemover.append(removeState)
     stack.alignment = .center
   }
 }

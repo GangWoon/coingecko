@@ -47,11 +47,9 @@ public class AsyncUIImageView: UIImageView {
         let data = try await cache.fetch(url)
         image = UIImage(data: data)
       } catch {
-        if let placeholder {
-          image = placeholder
-        } else {
-          image = UIImage(systemName: "exclamationmark.square")
-        }
+        image = placeholder != nil
+        ? placeholder
+        : UIImage(systemName: "exclamationmark.square")
       }
     }
   }
@@ -85,7 +83,6 @@ public actor ImageCache {
       switch value.entry {
       case let .inProgress(task):
         return try await task.value
-        
       case let .ready(data):
         return data
       }
