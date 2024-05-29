@@ -1,7 +1,7 @@
 import protocol Foundation.LocalizedError
 import struct Foundation.Data
 import struct Foundation.URL
-import HTTPClient
+@_exported import HTTPClient
 
 public struct UniversalClient: Sendable {
   let serverURL: URL?

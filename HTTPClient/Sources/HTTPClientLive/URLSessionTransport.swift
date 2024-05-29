@@ -1,4 +1,3 @@
-import HTTPClient
 import Foundation
 
 public struct URLSessionTransport: ClientTransport {
