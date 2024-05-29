@@ -34,6 +34,9 @@ public final class SearchInteractor: SearchDataStore {
   public var presenter: (any SearchPresentationLogic)?
   /// var navigate: (model) -> Void
   
+  /// 글로벌 변수로 뺄 수 있을 거 같아보입니다.
+  private var cancellables: [UUID: Task<Void, Never>] = [:]
+  
   public init(
     state: State = .init(),
     worker: any SearchWorkerInterface
@@ -50,6 +53,18 @@ public final class SearchInteractor: SearchDataStore {
     self.newCoins = state.newCoins
     
     self.worker = worker
+  }
+  
+  @discardableResult
+  private func run(_ work: @MainActor @Sendable @escaping () async -> Void) -> Task<Void, Never> {
+    let id = UUID()
+    let task = Task {
+      defer { cancellables[id] = nil }
+      await work()
+    }
+    cancellables[id] = task
+    
+    return task
   }
 }
 
@@ -170,21 +185,25 @@ extension SearchInteractor: SearchBusinessLogic {
       fatalError()
     case .trending:
       selectedTrendingCategory = SearchFeature.TrendingCategory(rawValue: request.indexPath.row) ?? selectedTrendingCategory
-      Task {
-        await presenter?.updateSection(.trending(updateTrending))
+      run { [weak self] in
+        guard let self else { return }
+        self.presenter?.updateSection(.trending(self.updateTrending))
       }
     case .highlight:
       selectedHighlightCategory = SearchFeature.HighlightCategory(rawValue: request.indexPath.row) ?? selectedHighlightCategory
-      Task {
-        await presenter?.updateSection(.highlight(updateHighlight))
-      }
+      updateTrendingSection()
     }
   }
   
   public func tappedExpandRow() {
     isTrendingExpanded = true
-    Task {
-      await presenter?.updateSection(.trending(updateTrending))
+    updateTrendingSection()
+  }
+  
+  private func updateTrendingSection() {
+    run { [weak self] in
+      guard let self else { return }
+      self.presenter?.updateSection(.trending(self.updateTrending))
     }
   }
 }
