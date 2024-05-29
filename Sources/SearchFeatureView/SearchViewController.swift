@@ -1,14 +1,13 @@
 import ViewControllerHelper
-import ViewHelper
-import Combine
-import UIKit
 import SearchFeature
+import ViewHelper
+import ApiClient
+import UIKit
 
 public final class SearchViewController: BaseViewController {
   public var interactor: any SearchDataStore & SearchBusinessLogic
   
   private var datasource: UITableViewDiffableDataSource<SearchFeature.SectionType, SearchFeature.RowData>!
-  private var cancellables: Set<AnyCancellable> = []
   
   public init(interactor: any SearchDataStore & SearchBusinessLogic) {
     self.interactor = interactor

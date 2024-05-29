@@ -1,5 +1,5 @@
-import Foundation
 import ApiClientLive
+import Foundation
 
 public enum SearchFeature {
   public enum FetchTrending {

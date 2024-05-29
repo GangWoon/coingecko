@@ -1,4 +1,4 @@
-import UIKit
+import struct UIKit.IndexPath
 import Foundation
 
 public protocol SearchDataStore: AnyObject {
