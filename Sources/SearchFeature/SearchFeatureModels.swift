@@ -1,5 +1,7 @@
 import Foundation
 
+/// 개발자의 역량이 가장 많이 반영되는 공간
+/// 개념을 분리시키는 단위가 명확하지 않기 때문에 어색함을 많이 느낍니다.
 public enum SearchFeature {
   public enum FetchTrending {
     public struct Response {
@@ -81,6 +83,10 @@ extension SearchFeature {
   }
 }
 
+// MARK: - Read in View
+/// View에서 사용되는 데이터 이지만, 모듈 끼리 통신하기 위해선 raw value(Int, String)보단
+/// 의미를 갖는 형태로 구체화해서 전달하는게 좋은 느낌을 받았습니다.
+/// 하지만 이런 이유 때문에 View에서 사용되는 데이터가 로직을 모아두는 곳에 존재해서 어색한 느낌을 받습니다.
 extension SearchFeature {
   public struct RowData: Hashable {
     public let rank: Int?

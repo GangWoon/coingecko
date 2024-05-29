@@ -1,11 +1,13 @@
 import Foundation
 
+// MARK: - Read in Interactor
 @MainActor
 public protocol SearchPresentationLogic: AnyObject {
   func updateList(_ response: SearchFeature.UpdateList.Response)
   func updateSection(_ response: SearchFeature.UpdateList.ResponseType)
 }
 
+// MARK: - Read in View
 @MainActor
 public protocol SearchDisplayLogic: AnyObject {
   func applySnapshot(_ viewModel: SearchFeature.UpdateList.ViewModel)
