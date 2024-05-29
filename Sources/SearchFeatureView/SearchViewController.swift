@@ -6,7 +6,6 @@ import UIKit
 
 public final class SearchViewController: BaseViewController {
   public var interactor: any SearchDataStore & SearchBusinessLogic
-  
   private var datasource: UITableViewDiffableDataSource<SearchFeature.SectionType, SearchFeature.RowData>!
   
   public init(interactor: any SearchDataStore & SearchBusinessLogic) {
