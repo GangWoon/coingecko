@@ -3,7 +3,9 @@ import Foundation
 
 public enum Operations {
   public enum Trending {
-    public struct Input: Sendable { }
+    public struct Input: Sendable {
+      public init() { }
+    }
     public enum Output: Sendable {
       public struct Ok: Sendable {
         public enum Body: Sendable {
@@ -18,6 +20,10 @@ public enum Operations {
           case json(Components.Schemas.Trending)
         }
         public var body: Body
+        
+        public init(body: Body) {
+          self.body = body
+        }
       }
       
       case ok(Ok)
@@ -26,7 +32,9 @@ public enum Operations {
   }
   
   public enum Coin {
-    public struct Input: Sendable { }
+    public struct Input: Sendable { 
+      public init() { }
+    }
     public enum Output: Sendable {
       public struct Ok: Sendable {
         public enum Body: Sendable {
@@ -41,6 +49,10 @@ public enum Operations {
           case json([Components.Schemas.Coin])
         }
         public var body: Body
+        
+        public init(body: Body) {
+          self.body = body
+        }
       }
       
       case ok(Ok)

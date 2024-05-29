@@ -1,5 +1,6 @@
-import APIClient
+import ApiClientLive
 import Foundation
+import ApiClient
 
 public protocol SearchWorkerInterface: AnyObject {
   func loadSearchHistory() -> [String]
@@ -9,9 +10,9 @@ public protocol SearchWorkerInterface: AnyObject {
 }
 
 public final class SearchWorker: SearchWorkerInterface {
-  let apiClient: APIClient
+  let apiClient: ApiClient
   
-  public init(apiClient: APIClient = .live) {
+  public init(apiClient: ApiClient) {
     self.apiClient = apiClient
   }
   

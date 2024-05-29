@@ -1,4 +1,18 @@
-let trendingData = """
+public extension ApiClient {
+  static let test: Self = .init(
+    trending: {
+      return try .ok(.init(body: .json(decode(trendingData.data(using: .utf8)!))))
+    },
+    topGainerAndLoser: {
+      return try .ok(.init(body: .json(decode(topGainerAndLoserData.data(using: .utf8)!))))
+    },
+    newCoins: {
+      return try .ok(.init(body: .json(decode(newCoinsData.data(using: .utf8)!))))
+    }
+  )
+}
+
+private let trendingData = """
 {
   "coins": [
     {

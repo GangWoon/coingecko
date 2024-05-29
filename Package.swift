@@ -24,7 +24,7 @@ let package = Package(
     .target(
       name: "SearchFeature",
       dependencies: [
-        "APIClient"
+        "ApiClientLive"
       ]
     ),
     .target(
@@ -37,9 +37,19 @@ let package = Package(
       ]
     ),
     .target(
-      name: "APIClient",
+      name: "ApiClient",
       dependencies: [
         .product(name: "HTTPClientLive", package: "HTTPClient")
+      ]
+    ),
+    .target(
+      name: "ApiClientLive",
+      dependencies: [
+        "ApiClient",
+        .product(
+          name: "HTTPClientLive",
+          package: "HTTPClient"
+        )
       ],
       swiftSettings: [
         .enableExperimentalFeature("StrictConcurrency")

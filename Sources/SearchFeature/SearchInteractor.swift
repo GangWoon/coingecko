@@ -1,7 +1,7 @@
 import UIKit
 import Foundation
 
-public protocol SearchDataStore {
+public protocol SearchDataStore: AnyObject {
   var text: String { get }
   var sectionList: [SearchFeature.SectionType] { get }
   var selectedTrendingCategory: SearchFeature.TrendingCategory { get }

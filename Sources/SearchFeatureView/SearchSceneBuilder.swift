@@ -1,3 +1,4 @@
+import ApiClientLive
 import SearchFeature
 
 public struct SearchSceneBuilder {
@@ -26,5 +27,7 @@ public struct SearchSceneBuilder {
 }
 
 public extension SearchSceneBuilder.Dependency {
-  static let live = Self(work: SearchWorker())
+  static let live = Self(
+    work: SearchWorker(apiClient: .live)
+  )
 }
