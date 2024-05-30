@@ -27,7 +27,7 @@ public enum SearchFeature {
     }
     
     public struct Response {
-      struct Item {
+      public struct Item {
         var thumb: String
         var symbol: String
         var name: String?
@@ -41,27 +41,34 @@ public enum SearchFeature {
   
   public enum UpdateList {
     public enum ResponseType {
-      case trending(Response.Trending)
-      case highlight(Response.Highlight)
+      case trending(Response.Information.Trending)
+      case highlight(Response.Information.Highlight)
     }
     
-    public struct Response {
-      var trending: Trending
-      public struct Trending {
-        var data: FetchTrending.Response
-        var isExpanded: Bool
-        var selectedCategory: TrendingCategory
+    public enum Response {
+      case information(Information)
+      public struct Information {
+        public var trending: Trending
+        public struct Trending {
+          var data: FetchTrending.Response
+          var isExpanded: Bool
+          var selectedCategory: TrendingCategory
+        }
+        
+        public var highlight: Highlight
+        public struct Highlight {
+          var data: FetchHighlight.Response
+          var selectedCategory: HighlightCategory
+        }
       }
-      
-      var highlight: Highlight
-      public struct Highlight {
-        var data: FetchHighlight.Response
-        var selectedCategory: HighlightCategory
-      }
+      case loading
+      case search(SearchApi.Response)
     }
     
-    public struct ViewModel {
-      public var dataSource: [SearchFeature.SectionType: [RowData]]
+    public enum ViewModel {
+      case information([SearchFeature.SectionType: [RowData]])
+      case loading
+      case search([SearchFeature.SectionType: [RowData]])
     }
   }
   
@@ -141,11 +148,20 @@ extension SearchFeature {
         return "인기"
       case .highlight:
         return "하이라이트"
+      case .coin:
+        return "코인"
+      case .nft:
+        return "NFT"
+      case .exchange:
+        return "교환소"
       }
     }
     case history = 0
     case trending
     case highlight
+    case coin
+    case nft
+    case exchange
     
     public static func < (
       lhs: SearchFeature.SectionType,
