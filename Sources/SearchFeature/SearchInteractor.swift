@@ -1,5 +1,6 @@
 import struct UIKit.IndexPath
 import Foundation
+import Combine
 
 // MARK: - Read in View
 /// 해당 프로토콜은 상태값을 표현하는 역활이 아닌, 상태값을 변경 시켜주는 "object"여야 합니다.
@@ -25,6 +26,8 @@ public protocol SearchBusinessLogic {
 
 public final class SearchInteractor: SearchDataStore {
   public var text: String
+  private var textStream = PassthroughSubject<String, Never>()
+  
   public var isTrendingExpanded: Bool
   public var selectedTrendingCategory: SearchFeature.TrendingCategory
   public var trendingCoins: [SearchFeature.Coin]
@@ -43,6 +46,7 @@ public final class SearchInteractor: SearchDataStore {
   
   /// 글로벌 변수로 뺄 수 있을 거 같아보입니다.
   private var cancellables: [UUID: Task<Void, Never>] = [:]
+  private var removableCancellations: [UUID] = []
   
   public init(
     state: State = .init(),
@@ -60,6 +64,16 @@ public final class SearchInteractor: SearchDataStore {
     self.newCoins = state.newCoins
     
     self.worker = worker
+    
+    subscibeStream()
+  }
+  
+  deinit {
+    removableCancellations
+      .forEach {
+        cancellables[$0]?.cancel()
+        cancellables[$0] = nil
+      }
   }
   
   @discardableResult
@@ -72,6 +86,23 @@ public final class SearchInteractor: SearchDataStore {
     cancellables[id] = task
     
     return task
+  }
+  
+  private func subscibeStream() {
+    subscribeTextStream()
+  }
+  
+  private func subscribeTextStream() {
+    let id = UUID()
+    let task = convertTask(
+      textStream
+        .debounce(for: 1, scheduler: DispatchQueue.main)
+        .sink { [weak self] in
+          self?.searchApi($0)
+        }
+    )
+    cancellables[id] = task
+    removableCancellations.append(id)
   }
 }
 
@@ -251,6 +282,24 @@ private extension SearchInteractor {
       topGainer: topGainer,
       topLoser: topLoser,
       newCoins: newCoins
+    )
+  }
+}
+
+private func convertTask(_ subscription: AnyCancellable) -> Task<Void, Never> {
+  let box = SubscriptionBox()
+  final class SubscriptionBox {
+    var subscription: AnyCancellable?
+    func cancel() {
+      subscription?.cancel()
+      subscription = nil
+    }
+  }
+  
+  return Task {
+    let stream = AsyncStream(
+      unfolding: { box.subscription = subscription },
+      onCancel: { box.cancel() }
     )
   }
 }
