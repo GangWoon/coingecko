@@ -211,9 +211,24 @@ extension SearchInteractor: SearchBusinessLogic {
   }
   
   public func searchFieldChanged(_ text: String?) {
-    if let text {
-      self.text = text
+    guard let text else { return }
+    self.text = text
+    textStream.send(text)
+  }
+  
+  private func searchApi(_ query: String) {
+    let id = UUID()
+    let task = Task {
+      defer { cancellables[id] = nil }
+      do {
+        let result = try await worker.search(request: .init(query: query))
+        print(result)
+      } catch is CancellationError {
+      } catch {
+        print(error)
+      }
     }
+    cancellables[id] = task
   }
   
   public func categoryTapped(_ request: SearchFeature.CategoryTapped.Request) {
