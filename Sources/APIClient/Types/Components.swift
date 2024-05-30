@@ -154,9 +154,8 @@ extension Components.Schemas.Search {
   public struct Coin: Sendable, Codable {
     public var id: String
     public var name: String
-    public var apiSymbol: String
     public var symbol: String
-    public var marketCapRank: Int
+    public var marketCapRank: Int?
     public var thumb: String
   }
   
