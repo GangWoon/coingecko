@@ -47,7 +47,7 @@ public final class SearchViewController: BaseViewController {
         self?.interactor.searchFieldChanged(textField.text)
       }
     }
-    textField.addAction(action, for: .valueChanged)
+    textField.addAction(action, for: .editingChanged)
     
     return textField.bottomAnchor
   }
