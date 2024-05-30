@@ -3,7 +3,7 @@ import ApiClient
 
 public protocol SearchWorkerInterface: AnyObject {
   func loadSearchHistory() -> [String]
-  func saveSearchHistory()
+  func saveSearchHistory(_ item: SearchFeature.SearchApi.Response.Item)
   func getTrending() async throws -> SearchFeature.FetchTrending.Response
   func getHighlight() async throws -> SearchFeature.FetchHighlight.Response
   func search(request: SearchFeature.SearchApi.Request) async throws -> SearchFeature.SearchApi.Response
@@ -20,7 +20,9 @@ public final class SearchWorker: SearchWorkerInterface {
     return []
   }
   
-  public func saveSearchHistory() { }
+  public func saveSearchHistory(_ item: SearchFeature.SearchApi.Response.Item) {
+    
+  }
   
   public func getTrending() async throws -> SearchFeature.FetchTrending.Response {
     let result = try await apiClient.trending()

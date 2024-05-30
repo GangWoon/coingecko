@@ -10,6 +10,7 @@ import Combine
 /// 분리해서 이득이 되는 경우가 궁금합니다.
 public protocol SearchDataStore: AnyObject {
   var text: String { get }
+  var isLoading: Bool { get }
   var sectionList: [SearchFeature.SectionType] { get }
   var selectedTrendingCategory: SearchFeature.TrendingCategory { get }
   var selectedHighlightCategory: SearchFeature.HighlightCategory { get }
@@ -39,14 +40,16 @@ public final class SearchInteractor: SearchDataStore {
   public var topLoser: [SearchFeature.Coin]
   public var newCoins: [SearchFeature.Coin]
   
+  public var isLoading: Bool = false
+  public var searchResults: SearchFeature.SearchApi.Response?
+  
   // MARK: - Interface
   public var worker: any SearchWorkerInterface
   public var presenter: (any SearchPresentationLogic)?
   /// var navigate: (model) -> Void
   
   /// 글로벌 변수로 뺄 수 있을 거 같아보입니다.
-  private var cancellables: [UUID: Task<Void, Never>] = [:]
-  private var removableCancellations: [UUID] = []
+  private var cancellables: [AnyHashable: Task<Void, Never>] = [:]
   
   public init(
     state: State = .init(),
@@ -62,18 +65,9 @@ public final class SearchInteractor: SearchDataStore {
     self.topGainer = state.topGainer
     self.topLoser = state.topLoser
     self.newCoins = state.newCoins
+    self.searchResults = state.searchResults
     
     self.worker = worker
-    
-    subscibeStream()
-  }
-  
-  deinit {
-    removableCancellations
-      .forEach {
-        cancellables[$0]?.cancel()
-        cancellables[$0] = nil
-      }
   }
   
   @discardableResult
@@ -87,33 +81,28 @@ public final class SearchInteractor: SearchDataStore {
     
     return task
   }
-  
-  private func subscibeStream() {
-    subscribeTextStream()
-  }
-  
-  private func subscribeTextStream() {
-    let id = UUID()
-    let task = convertTask(
-      textStream
-        .debounce(for: 1, scheduler: DispatchQueue.main)
-        .sink { [weak self] in
-          self?.searchApi($0)
-        }
-    )
-    cancellables[id] = task
-    removableCancellations.append(id)
-  }
 }
 
 extension SearchInteractor {
   public var sectionList: [SearchFeature.SectionType] {
     var list: [SearchFeature.SectionType] = []
-    if hasTrendingData {
-      list.append(.trending)
-    }
-    if hasHighlightData {
-      list.append(.highlight)
+    if let searchResults {
+      if !searchResults.coins.isEmpty {
+        list.append(.coin)
+      }
+      if !searchResults.nfts.isEmpty {
+        list.append(.nft)
+      }
+      if !searchResults.exchanges.isEmpty {
+        list.append(.exchange)
+      }
+    } else {
+      if hasTrendingData {
+        list.append(.trending)
+      }
+      if hasHighlightData {
+        list.append(.highlight)
+      }
     }
     
     return list
@@ -154,6 +143,7 @@ extension SearchInteractor {
     public var topGainer: [SearchFeature.Coin]
     public var topLoser: [SearchFeature.Coin]
     public var newCoins: [SearchFeature.Coin]
+    public var searchResults: SearchFeature.SearchApi.Response?
     
     public init(
       trendingCategory: [SearchFeature.TrendingCategory] = SearchFeature.TrendingCategory.allCases,
@@ -167,7 +157,8 @@ extension SearchInteractor {
       selectedHighlightCategory: SearchFeature.HighlightCategory = .topGainers,
       topGainer: [SearchFeature.Coin] = [],
       topLoser: [SearchFeature.Coin] = [],
-      newCoins: [SearchFeature.Coin] = []
+      newCoins: [SearchFeature.Coin] = [],
+      searchResults: SearchFeature.SearchApi.Response? = nil
     ) {
       self.trendingCategory = trendingCategory
       self.highlightCategory = highlightCategory
@@ -181,6 +172,7 @@ extension SearchInteractor {
       self.topGainer = topGainer
       self.topLoser = topLoser
       self.newCoins = newCoins
+      self.searchResults = searchResults
     }
   }
 }
@@ -211,9 +203,38 @@ extension SearchInteractor: SearchBusinessLogic {
   }
   
   public func searchFieldChanged(_ text: String?) {
-    guard let text else { return }
-    self.text = text
-    textStream.send(text)
+    let id: AnyHashable = CancelTask.searchApi
+    if let text, !text.isEmpty {
+      self.text = text
+      isLoading = true
+      run { [weak self] in
+        guard let self else { return }
+        self.presenter?.updateList(.loading)
+      }
+      if cancellables[id] == nil {
+        let task = Task {
+          do {
+            try await convertTask(
+              textStream
+                .debounce(for: 1, scheduler: DispatchQueue.main)
+                .sink { [weak self] in
+                  self?.searchApi($0)
+                }
+            )
+          } catch { }
+        }
+        cancellables[id] = task
+      }
+      textStream.send(text)
+    } else {
+      cancellables[id]?.cancel()
+      cancellables[id] = nil
+      searchResults = nil
+      run { [weak self] in
+        guard let self else { return }
+        self.presenter?.updateList(updateListResponse)
+      }
+    }
   }
   
   private func searchApi(_ query: String) {
@@ -221,8 +242,13 @@ extension SearchInteractor: SearchBusinessLogic {
     let task = Task {
       defer { cancellables[id] = nil }
       do {
-        let result = try await worker.search(request: .init(query: query))
-        print(result)
+        var result = try await worker.search(request: .init(query: query))
+        result.coins = Array(result.coins.prefix(5))
+        result.nfts = Array(result.nfts.prefix(5))
+        result.exchanges = Array(result.exchanges.prefix(5))
+        searchResults = result
+        
+        await presenter?.updateList(.search(result))
       } catch is CancellationError {
       } catch {
         print(error)
@@ -233,19 +259,18 @@ extension SearchInteractor: SearchBusinessLogic {
   
   public func categoryTapped(_ request: SearchFeature.CategoryTapped.Request) {
     let section = sectionList[request.indexPath.section]
-    
     switch section {
-    case .history:
-      fatalError()
     case .trending:
       selectedTrendingCategory = SearchFeature.TrendingCategory(rawValue: request.indexPath.row) ?? selectedTrendingCategory
-      run { [weak self] in
-        guard let self else { return }
-        self.presenter?.updateSection(.trending(self.updateTrending))
-      }
+      updateTrendingSection()
     case .highlight:
       selectedHighlightCategory = SearchFeature.HighlightCategory(rawValue: request.indexPath.row) ?? selectedHighlightCategory
-      updateTrendingSection()
+      run { [weak self] in
+        guard let self else { return }
+        self.presenter?.updateSection(.highlight(self.updateHighlight))
+      }
+    default:
+      break
     }
   }
   
@@ -263,14 +288,21 @@ extension SearchInteractor: SearchBusinessLogic {
 }
 
 private extension SearchInteractor {
+  // MARK: - Cancel Task ID
+  enum CancelTask: Hashable {
+    case searchApi
+  }
+  
   var updateListResponse: SearchFeature.UpdateList.Response {
-    .init(
-      trending: updateTrending,
-      highlight: updateHighlight
+    .information(
+      .init(
+        trending: updateTrending,
+        highlight: updateHighlight
+      )
     )
   }
   
-  var updateTrending: SearchFeature.UpdateList.Response.Trending {
+  var updateTrending: SearchFeature.UpdateList.Response.Information.Trending {
     .init(
       data: trendingResponse,
       isExpanded: isTrendingExpanded,
@@ -285,8 +317,7 @@ private extension SearchInteractor {
     )
   }
   
-  
-  var updateHighlight: SearchFeature.UpdateList.Response.Highlight {
+  var updateHighlight: SearchFeature.UpdateList.Response.Information.Highlight {
     .init(
       data: highlightResponse,
       selectedCategory: selectedHighlightCategory
@@ -299,9 +330,25 @@ private extension SearchInteractor {
       newCoins: newCoins
     )
   }
+  
+  var searchData: SearchFeature.SearchApi.Response.Item? {
+    guard let searchResults else { return nil }
+    if let coin = searchResults.coins.first {
+      return coin
+    }
+    if let nft = searchResults.nfts.first {
+      return nft
+    }
+    if let exchange = searchResults.exchanges.first {
+      return exchange
+    }
+    return nil
+  }
 }
 
-private func convertTask(_ subscription: AnyCancellable) -> Task<Void, Never> {
+private func convertTask(
+  _ subscription: AnyCancellable
+) async throws {
   let box = SubscriptionBox()
   final class SubscriptionBox {
     var subscription: AnyCancellable?
@@ -310,11 +357,21 @@ private func convertTask(_ subscription: AnyCancellable) -> Task<Void, Never> {
       subscription = nil
     }
   }
-  
-  return Task {
-    let stream = AsyncStream(
-      unfolding: { box.subscription = subscription },
-      onCancel: { box.cancel() }
-    )
+  let stream: AsyncStream<Void> = .init { continuation in
+    box.subscription = subscription
+    continuation.onTermination = { _ in
+      box.cancel()
+    }
   }
+  
+  try await withTaskCancellationHandler(
+    operation: {
+      for await _ in stream {
+        try await Task.sleep(nanoseconds: 1_000_000_000)
+      }
+    },
+    onCancel: {
+      box.cancel()
+    }
+  )
 }

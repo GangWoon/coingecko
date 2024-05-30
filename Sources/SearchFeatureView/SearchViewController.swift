@@ -2,14 +2,21 @@ import ViewControllerHelper
 import SearchFeature
 import ViewHelper
 import ApiClient
+import Combine
 import UIKit
 
 public final class SearchViewController: BaseViewController {
   public var interactor: any SearchDataStore & SearchBusinessLogic
   private var datasource: UITableViewDiffableDataSource<SearchFeature.SectionType, SearchFeature.RowData>!
   
+  private var loadingStateStream: CurrentValueSubject<Bool, Never>
+  private var cancellables: Set<AnyCancellable> = []
+  
+  private var hideKeyboard: (() -> Void)?
+  
   public init(interactor: any SearchDataStore & SearchBusinessLogic) {
     self.interactor = interactor
+    self.loadingStateStream = .init(interactor.isLoading)
     super.init(nibName: nil, bundle: nil)
   }
   
@@ -48,6 +55,11 @@ public final class SearchViewController: BaseViewController {
       }
     }
     textField.addAction(action, for: .editingChanged)
+    hideKeyboard = { [weak textField] in
+      if let textField, textField.isFirstResponder {
+        textField.resignFirstResponder()
+      }
+    }
     
     return textField.bottomAnchor
   }
@@ -60,6 +72,7 @@ public final class SearchViewController: BaseViewController {
     tableView.delegate = self
     view.addSubview(tableView)
     tableView.translatesAutoresizingMaskIntoConstraints = false
+    buildIndicator(superView: tableView)
     NSLayoutConstraint.activate([
       tableView.topAnchor.constraint(equalTo: bottmAnchor),
       tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
@@ -67,6 +80,24 @@ public final class SearchViewController: BaseViewController {
       tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
     ])
     view.backgroundColor = tableView.backgroundColor
+  }
+  
+  private func buildIndicator(superView: UIView) {
+    let indicatorView = UIActivityIndicatorView(style: .large)
+    superView.addSubview(indicatorView)
+    indicatorView.translatesAutoresizingMaskIntoConstraints = false
+    NSLayoutConstraint.activate([
+      indicatorView.centerXAnchor.constraint(equalTo: superView.centerXAnchor),
+      indicatorView.centerYAnchor.constraint(equalTo: superView.centerYAnchor, constant: -80)
+    ])
+    loadingStateStream
+      .sink { [weak indicatorView] state in
+        indicatorView?.isHidden = !state
+        state
+        ? indicatorView?.startAnimating()
+        : indicatorView?.stopAnimating()
+      }
+      .store(in: &cancellables)
   }
   
   private func buildListDataSource(tableView: UITableView) {
@@ -103,16 +134,19 @@ extension SearchViewController: UITableViewDelegate {
     _ tableView: UITableView,
     viewForHeaderInSection section: Int
   ) -> UIView? {
+    guard !interactor.sectionList.isEmpty else {
+      return nil
+    }
     let sectionType = interactor.sectionList[section]
     let view = tableView.dequeueReusableHeaderFooterView(type: SearchListHeaderView.self)
     var selectedIndex: Int = 0
     switch sectionType {
-    case .history:
-      break
     case .trending:
       selectedIndex =  interactor.selectedTrendingCategory.rawValue
     case .highlight:
       selectedIndex =  interactor.selectedHighlightCategory.rawValue
+    default:
+      break
     }
     view?.build(
       title: sectionType.title,
@@ -138,17 +172,30 @@ extension SearchViewController: UITableViewDelegate {
           )
       }
   }
+  
+  public func scrollViewDidScroll(_ scrollView: UIScrollView) {
+    hideKeyboard?()
+  }
 }
 
 extension SearchViewController: SearchDisplayLogic {
   public func applySnapshot(_ viewModel: SearchFeature.UpdateList.ViewModel) {
-    let items = viewModel.dataSource
-      .sorted { $0.key.rawValue < $1.key.rawValue }
     var snapShot = NSDiffableDataSourceSnapshot<SearchFeature.SectionType, SearchFeature.RowData>()
-    snapShot.appendSections(items.map(\.key))
-    items.forEach { key, value in
-      snapShot.appendItems(value, toSection: key)
+    switch viewModel {
+    case .information(let dataSoruce),
+        .search(let dataSoruce):
+      let items = dataSoruce
+        .filter { !$0.value.isEmpty }
+        .sorted { $0.key.rawValue < $1.key.rawValue }
+      snapShot.appendSections(items.map(\.key))
+      items.forEach { key, value in
+        snapShot.appendItems(value, toSection: key)
+      }
+      loadingStateStream.send(false)
+    case .loading:
+      loadingStateStream.send(true)
     }
+    
     datasource.apply(snapShot)
   }
   
@@ -167,7 +214,7 @@ extension SearchViewController: SearchDisplayLogic {
 private extension SearchViewController {
   func rowType(_ section: SearchFeature.SectionType) -> SearchListRow.ViewType {
     switch section {
-    case .history:
+    case .history, .coin, .nft, .exchange:
       return .primary
     case .trending:
       return interactor.selectedTrendingCategory.viewType
@@ -180,14 +227,14 @@ private extension SearchViewController {
 private extension SearchFeature.SectionType {
   var category: [String] {
     switch self {
-    case .history:
-      return []
     case .trending:
       return SearchFeature.TrendingCategory.allCases
         .map(\.description)
     case .highlight:
       return SearchFeature.HighlightCategory.allCases
         .map(\.description)
+    default:
+      return []
     }
   }
 }
