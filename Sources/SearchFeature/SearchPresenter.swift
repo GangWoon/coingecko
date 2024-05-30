@@ -32,9 +32,16 @@ extension SearchPresenter: SearchPresentationLogic {
   
   public func updateList(_ response: SearchFeature.UpdateList.Response) {
     var dataSource: [SearchFeature.SectionType: [SearchFeature.RowData]] = [:]
-    dataSource[.trending] = response.trending.rowData
-    dataSource[.highlight] = response.highlight.rowData
-    viewController?.applySnapshot(.init(dataSource: dataSource))
+    switch response {
+    case .information(let source):
+      dataSource[.trending] = source.trending.rowData
+      dataSource[.highlight] = source.highlight.rowData
+      viewController?.applySnapshot(.information(dataSource))
+    case .loading:
+      viewController?.applySnapshot(.loading)
+    case .search(let source):
+      viewController?.applySnapshot(.search(source.rowData))
+    }
   }
 }
 
@@ -101,7 +108,7 @@ private extension SearchFeature.UpdateList.ResponseType {
   }
 }
 
-private extension SearchFeature.UpdateList.Response.Trending {
+private extension SearchFeature.UpdateList.Response.Information.Trending {
   var rowData: [SearchFeature.RowData] {
     switch selectedCategory {
     case .coin:
@@ -117,7 +124,7 @@ private extension SearchFeature.UpdateList.Response.Trending {
   }
 }
 
-private extension SearchFeature.UpdateList.Response.Highlight {
+private extension SearchFeature.UpdateList.Response.Information.Highlight {
   var rowData: [SearchFeature.RowData] {
     switch selectedCategory {
     case .topGainers:
@@ -138,4 +145,27 @@ private extension SearchFeature.UpdateList.Response.Highlight {
 
 public extension SearchFeature.RowData {
   static let expanedRow = Self(name: "추가 코인 로드", fullname: "추가 코인 로드")
+}
+
+private extension SearchFeature.SearchApi.Response {
+  var rowData: [SearchFeature.SectionType: [SearchFeature.RowData]] {
+    var rowData: [SearchFeature.SectionType: [SearchFeature.RowData]] = [:]
+    rowData[.coin] = Array(coins.prefix(5).map(\.rowDatum))
+    /// access denied beacuse of server
+    rowData[.nft] = Array(nfts.prefix(5).map(\.rowDatum))
+    rowData[.exchange] = Array(exchanges.prefix(5).map(\.rowDatum))
+      
+    return rowData
+  }
+}
+private extension SearchFeature.SearchApi.Response.Item {
+  var rowDatum: SearchFeature.RowData {
+    .init(
+      rank: rank,
+      imageUrl: thumb.hasPrefix("https://") ? thumb : nil,
+      name: name ?? "",
+      fullname: symbol,
+      price: nil
+    )
+  }
 }
