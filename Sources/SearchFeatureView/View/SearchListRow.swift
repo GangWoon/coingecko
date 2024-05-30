@@ -42,6 +42,8 @@ final class SearchListRow: UITableViewCell, ViewStateRemover {
       if let priceInfo = state.priceInfo {
         let priceView = buildChangePriceView(priceInfo: priceInfo)
         stack.addArrangedSubviews([coinView, .spacing(), priceView])
+      } else {
+        stack.addArrangedSubviews([coinView, .spacing()])
       }
     }
   }
