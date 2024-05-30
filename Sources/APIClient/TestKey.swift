@@ -8,6 +8,9 @@ public extension ApiClient {
     },
     newCoins: {
       return try .ok(.init(body: .json(decode(newCoinsData.data(using: .utf8)!))))
+    },
+    search: { _ in
+      fatalError()
     }
   )
 }

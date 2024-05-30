@@ -59,6 +59,39 @@ public enum Operations {
       case undocumented(statusCode: Int, UndocumentedPayload)
     }
   }
+  
+  public enum Search {
+    public struct Input: Sendable {
+      public var text: String
+      public init(text: String) {
+        self.text = text
+      }
+    }
+    
+    public enum Output: Sendable {
+      public struct Ok: Sendable {
+        public enum Body: Sendable {
+          public var json: Components.Schemas.Search {
+            get {
+              switch self {
+              case .json(let value):
+                return value
+              }
+            }
+          }
+          case json(Components.Schemas.Search)
+        }
+        public var body: Body
+        
+        public init(body: Body) {
+          self.body = body
+        }
+      }
+      
+      case ok(Ok)
+      case undocumented(statusCode: Int, UndocumentedPayload)
+    }
+  }
 }
 
 

@@ -6,6 +6,7 @@ public protocol SearchWorkerInterface: AnyObject {
   func saveSearchHistory()
   func getTrending() async throws -> SearchFeature.FetchTrending.Response
   func getHighlight() async throws -> SearchFeature.FetchHighlight.Response
+  func search(request: SearchFeature.SearchApi.Request) async throws -> SearchFeature.SearchApi.Response
 }
 
 public final class SearchWorker: SearchWorkerInterface {
@@ -25,7 +26,7 @@ public final class SearchWorker: SearchWorkerInterface {
     let result = try await apiClient.trending()
     switch result {
     case .ok(let response):
-      return response.body.json.toDomain()
+      return response.body.json.domain
       
     case .undocumented:
       return .empty
@@ -41,8 +42,8 @@ public final class SearchWorker: SearchWorkerInterface {
     let topLoser: [SearchFeature.Coin]
     switch try await topGainerAndLoser {
     case .ok(let response):
-      topGainer = response.body.json.sorted(by: >).map { $0.toDomain() }
-      topLoser = response.body.json.sorted(by: <).map { $0.toDomain() }
+      topGainer = response.body.json.sorted(by: >).map(\.domain)
+      topLoser = response.body.json.sorted(by: <).map(\.domain)
     case .undocumented(statusCode: let code, let payload):
       topGainer = []
       topLoser = []
@@ -53,7 +54,7 @@ public final class SearchWorker: SearchWorkerInterface {
     let newCoinList: [SearchFeature.Coin]
     switch try await newCoins {
     case .ok(let response):
-      newCoinList = response.body.json.map { $0.toDomain() }
+      newCoinList = response.body.json.map(\.domain)
     case .undocumented:
       newCoinList = []
       fatalError()
@@ -65,20 +66,34 @@ public final class SearchWorker: SearchWorkerInterface {
       newCoins: newCoinList
     )
   }
+  
+  public func search(
+    request: SearchFeature.SearchApi.Request
+  ) async throws -> SearchFeature.SearchApi.Response {
+    let response = try await apiClient.search(.init(text: request.query))
+    switch response {
+    case .ok(let response):
+      return response.body.json.domain
+      
+      
+    case .undocumented:
+      fatalError()
+    }
+  }
 }
 
 private extension Components.Schemas.Trending {
-  func toDomain() -> SearchFeature.FetchTrending.Response {
+  var domain: SearchFeature.FetchTrending.Response {
     .init(
-      coins: coins.map { $0.toDomain() },
-      nfts: nfts.map { $0.toDomain() },
-      categories: categories.map { $0.toDomain() }
+      coins: coins.map(\.domain),
+      nfts: nfts.map(\.domain),
+      categories: categories.map(\.domain)
     )
   }
 }
 
 private extension Components.Schemas.Trending.Coin {
-  func toDomain() -> SearchFeature.Coin {
+  var domain: SearchFeature.Coin {
     .init(
       id: id,
       coinId: coinId,
@@ -91,7 +106,7 @@ private extension Components.Schemas.Trending.Coin {
 }
 
 private extension Components.Schemas.Trending.NFT {
-  func toDomain() -> SearchFeature.NFT {
+  var domain: SearchFeature.NFT {
     .init(
       id: id,
       name: name,
@@ -104,7 +119,7 @@ private extension Components.Schemas.Trending.NFT {
 }
 
 private extension Components.Schemas.Trending.Category {
-  func toDomain() -> SearchFeature.Category {
+  var domain: SearchFeature.Category {
     .init(
       id: id,
       name: name,
@@ -114,7 +129,7 @@ private extension Components.Schemas.Trending.Category {
 }
 
 private extension Components.Schemas.Coin {
-  func toDomain() -> SearchFeature.Coin {
+  var domain: SearchFeature.Coin {
     .init(
       id: id,
       name: name,
@@ -124,5 +139,42 @@ private extension Components.Schemas.Coin {
       currentPrice: currentPrice,
       priceChangePercentage24H: priceChangePercentage24H
     )
+  }
+}
+
+private extension Components.Schemas.Search {
+  var domain: SearchFeature.SearchApi.Response {
+    .init(
+      coins: coins?.map(\.domain) ?? [],
+      nfts: nfts?.map(\.domain) ?? [],
+      exchanges: exchanges?.map(\.domain) ?? []
+    )
+  }
+}
+
+private extension Components.Schemas.Search.Coin {
+  var domain: SearchFeature.SearchApi.Response.Item {
+    .init(
+      thumb: thumb,
+      symbol: symbol,
+      name: name,
+      rank: marketCapRank
+    )
+  }
+}
+
+private extension Components.Schemas.Search.NFT {
+  var domain: SearchFeature.SearchApi.Response.Item {
+    .init(
+      thumb: thumb,
+      symbol: symbol,
+      name: name
+    )
+  }
+}
+
+private extension Components.Schemas.Search.Exchange {
+  var domain: SearchFeature.SearchApi.Response.Item {
+    .init(thumb: thumb, symbol: name)
   }
 }

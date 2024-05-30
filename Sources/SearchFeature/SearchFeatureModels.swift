@@ -21,6 +21,24 @@ public enum SearchFeature {
     }
   }
   
+  public enum SearchApi {
+    public struct Request {
+      var query: String
+    }
+    
+    public struct Response {
+      struct Item {
+        var thumb: String
+        var symbol: String
+        var name: String?
+        var rank: Int?
+      }
+      var coins: [Item]
+      var nfts: [Item]
+      var exchanges: [Item]
+    }
+  }
+  
   public enum UpdateList {
     public enum ResponseType {
       case trending(Response.Trending)

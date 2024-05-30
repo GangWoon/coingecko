@@ -141,3 +141,36 @@ extension Components.Schemas {
     }
   }
 }
+
+extension Components.Schemas {
+  public struct Search: Sendable, Codable {
+    public var coins: [Coin]?
+    public var exchanges: [Exchange]?
+    public var nfts: [NFT]?
+  }
+}
+
+extension Components.Schemas.Search {
+  public struct Coin: Sendable, Codable {
+    public var id: String
+    public var name: String
+    public var apiSymbol: String
+    public var symbol: String
+    public var marketCapRank: Int
+    public var thumb: String
+  }
+  
+  public struct Exchange: Sendable, Codable {
+    public var id: String
+    public var name: String
+    public var marketType: String
+    public var thumb: String
+  }
+  
+  public struct NFT: Sendable, Codable {
+    public var id: String
+    public var name: String
+    public var symbol: String
+    public var thumb: String
+  }
+}

@@ -70,6 +70,29 @@ public extension ApiClient {
               }
             }
           )
+      },
+      search: { input in
+        try await client
+          .send(
+            input: input,
+            serializer: { input in
+              HTTPRequest(
+                path: "search",
+                queries: [.init(name: "query", value: input.text)]
+              )
+            },
+            deserializer: { response in
+              switch response.statusCode {
+              case 200:
+                return try .ok(.init(body: .json(decode(response.body))))
+              default:
+                return .undocumented(
+                  statusCode: response.statusCode,
+                  .init(headerFields: response.headerFields, body: response.body)
+                )
+              }
+            }
+          )
       }
     )
   }()
