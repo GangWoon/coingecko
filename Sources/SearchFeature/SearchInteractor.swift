@@ -1,5 +1,6 @@
 import struct UIKit.IndexPath
 import Foundation
+import CombineExt
 import Combine
 
 // MARK: - Read in View
@@ -214,13 +215,12 @@ extension SearchInteractor: SearchBusinessLogic {
       if cancellables[id] == nil {
         let task = Task {
           do {
-            try await convertTask(
-              textStream
-                .debounce(for: 1, scheduler: DispatchQueue.main)
-                .sink { [weak self] in
-                  self?.searchApi($0)
-                }
-            )
+            try await textStream
+              .debounce(for: 1, scheduler: DispatchQueue.main)
+              .sink { [weak self] in
+                self?.searchApi($0)
+              }
+              .stream
           } catch { }
         }
         cancellables[id] = task
@@ -344,34 +344,4 @@ private extension SearchInteractor {
     }
     return nil
   }
-}
-
-private func convertTask(
-  _ subscription: AnyCancellable
-) async throws {
-  let box = SubscriptionBox()
-  final class SubscriptionBox {
-    var subscription: AnyCancellable?
-    func cancel() {
-      subscription?.cancel()
-      subscription = nil
-    }
-  }
-  let stream: AsyncStream<Void> = .init { continuation in
-    box.subscription = subscription
-    continuation.onTermination = { _ in
-      box.cancel()
-    }
-  }
-  
-  try await withTaskCancellationHandler(
-    operation: {
-      for await _ in stream {
-        try await Task.sleep(nanoseconds: 1_000_000_000)
-      }
-    },
-    onCancel: {
-      box.cancel()
-    }
-  )
 }
