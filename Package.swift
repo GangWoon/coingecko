@@ -26,7 +26,7 @@ let package = Package(
       name: "SearchFeature",
       dependencies: [
         "ApiClientLive",
-        "RecentSearchsClient"
+        "RecentSearchesClient"
       ]
     ),
     .target(
@@ -58,7 +58,7 @@ let package = Package(
       ]
     ),
     .target(
-      name: "RecentSearchsClient",
+      name: "RecentSearchesClient",
       dependencies: [
         .product(name: "SQLite", package: "sqlite.swift")
       ]
