@@ -27,11 +27,22 @@ public enum SearchFeature {
     }
     
     public struct Response {
-      public struct Item {
+      public struct Item: Equatable {
         var thumb: String
         var symbol: String
         var name: String?
         var rank: Int?
+        public init(
+          thumb: String,
+          symbol: String,
+          name: String? = nil,
+          rank: Int? = nil
+        ) {
+          self.thumb = thumb
+          self.symbol = symbol
+          self.name = name
+          self.rank = rank
+        }
       }
       var coins: [Item]
       var nfts: [Item]
@@ -48,6 +59,7 @@ public enum SearchFeature {
     public enum Response {
       case information(Information)
       public struct Information {
+        public var recentSearchs: [SearchApi.Response.Item]
         public var trending: Trending
         public struct Trending {
           var data: FetchTrending.Response
@@ -113,7 +125,8 @@ extension SearchFeature {
 /// 의미를 갖는 형태로 구체화해서 전달하는게 좋은 느낌을 받았습니다.
 /// 하지만 이런 이유 때문에 View에서 사용되는 데이터가 로직을 모아두는 곳에 존재해서 어색한 느낌을 받습니다.
 extension SearchFeature {
-  public struct RowData: Hashable {
+  public struct RowData: Hashable, Identifiable {
+    public let id: UUID = .init()
     public let rank: Int?
     public let imageUrl: String?
     public let name: String
