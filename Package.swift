@@ -12,6 +12,7 @@ let package = Package(
   dependencies: [
     .package(path: "./HTTPClient"),
     .package(path: "./ViewHelper"),
+    .package(url: "https://github.com/stephencelis/SQLite.swift.git", from: "0.15.3")
   ],
   targets: [
     .target(
@@ -24,7 +25,8 @@ let package = Package(
     .target(
       name: "SearchFeature",
       dependencies: [
-        "ApiClientLive"
+        "ApiClientLive",
+        "RecentSearchsClient"
       ]
     ),
     .target(
@@ -53,6 +55,12 @@ let package = Package(
       ],
       swiftSettings: [
         .enableExperimentalFeature("StrictConcurrency")
+      ]
+    ),
+    .target(
+      name: "RecentSearchsClient",
+      dependencies: [
+        .product(name: "SQLite", package: "sqlite.swift")
       ]
     ),
     .target(name: "CombineExt"),
