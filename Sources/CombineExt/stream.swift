@@ -8,22 +8,21 @@ extension AnyCancellable {
       let box = Box()
       let stream: AsyncStream<Void> = .init { continuation in
         box.set(self)
+        continuation.onTermination = { _ in
+          box.cancel()
+        }
       }
-      try await withTaskCancellationHandler(
-        operation: {
-          for await _ in stream {
-            try await Task.sleep(nanoseconds: 1_000_000_000)
-          }
-        },
-        onCancel: { box.cancel() }
-      )
+      
+      for await _ in stream {
+        try await Task.sleep(nanoseconds: 1_000_000_000)
+      }
     }
   }
 }
 
 private final class Box {
   private var lock: NSLock = .init()
-  private var subscription: AnyCancellable?
+  private weak var subscription: AnyCancellable?
   
   func set(_ subscription: AnyCancellable) {
     lock.lock()
