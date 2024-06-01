@@ -1,9 +1,10 @@
+import RecentSearchesClient
 import Foundation
 import ApiClient
 
 public protocol SearchWorkerInterface: AnyObject {
-  func loadSearchHistory() -> [String]
-  func saveSearchHistory(_ item: SearchFeature.SearchApi.Response.Item)
+  func loadSearchHistory() throws -> [SearchFeature.SearchApi.Response.Item]
+  func saveSearchHistory(_ item: SearchFeature.SearchApi.Response.Item) throws
   func getTrending() async throws -> SearchFeature.FetchTrending.Response
   func getHighlight() async throws -> SearchFeature.FetchHighlight.Response
   func search(request: SearchFeature.SearchApi.Request) async throws -> SearchFeature.SearchApi.Response
@@ -11,17 +12,24 @@ public protocol SearchWorkerInterface: AnyObject {
 
 public final class SearchWorker: SearchWorkerInterface {
   let apiClient: ApiClient
+  let recentSearchesClient: RecentSearchesClient
   
-  public init(apiClient: ApiClient) {
+  public init(
+    apiClient: ApiClient,
+    recentSearchesClient: RecentSearchesClient
+  ) {
     self.apiClient = apiClient
+    self.recentSearchesClient = recentSearchesClient
   }
   
-  public func loadSearchHistory() -> [String] {
-    return []
+  public func loadSearchHistory() throws -> [SearchFeature.SearchApi.Response.Item] {
+    try recentSearchesClient
+      .load()
+      .map(\.domain)
   }
   
-  public func saveSearchHistory(_ item: SearchFeature.SearchApi.Response.Item) {
-    
+  public func saveSearchHistory(_ item: SearchFeature.SearchApi.Response.Item) throws {
+    try recentSearchesClient.save(item.row)
   }
   
   public func getTrending() async throws -> SearchFeature.FetchTrending.Response {
@@ -38,7 +46,6 @@ public final class SearchWorker: SearchWorkerInterface {
   public func getHighlight() async throws -> SearchFeature.FetchHighlight.Response {
     async let topGainerAndLoser = apiClient.topGainerAndLoser()
     async let newCoins = apiClient.newCoins()
-//    
     try Task.checkCancellation()
     let topGainer: [SearchFeature.Coin]
     let topLoser: [SearchFeature.Coin]
@@ -49,7 +56,6 @@ public final class SearchWorker: SearchWorkerInterface {
     case .undocumented(statusCode: let code, let payload):
       topGainer = []
       topLoser = []
-      fatalError()
     }
     
     try Task.checkCancellation()
@@ -59,7 +65,6 @@ public final class SearchWorker: SearchWorkerInterface {
       newCoinList = response.body.json.map(\.domain)
     case .undocumented:
       newCoinList = []
-      fatalError()
     }
     
     return .init(
@@ -76,8 +81,6 @@ public final class SearchWorker: SearchWorkerInterface {
     switch response {
     case .ok(let response):
       return response.body.json.domain
-      
-      
     case .undocumented:
       fatalError()
     }
@@ -178,5 +181,27 @@ private extension Components.Schemas.Search.NFT {
 private extension Components.Schemas.Search.Exchange {
   var domain: SearchFeature.SearchApi.Response.Item {
     .init(thumb: thumb, symbol: name)
+  }
+}
+
+private extension RecentSearch {
+  var domain: SearchFeature.SearchApi.Response.Item {
+    .init(
+      thumb: thumbnail ?? "",
+      symbol: symbol,
+      name: name,
+      rank: rank
+    )
+  }
+}
+
+private extension SearchFeature.SearchApi.Response.Item {
+  var row: RecentSearch {
+    .init(
+      symbol: symbol,
+      name: name,
+      thumbnail: thumb,
+      rank: rank
+    )
   }
 }
