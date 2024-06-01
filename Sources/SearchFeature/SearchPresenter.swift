@@ -34,6 +34,7 @@ extension SearchPresenter: SearchPresentationLogic {
     var dataSource: [SearchFeature.SectionType: [SearchFeature.RowData]] = [:]
     switch response {
     case .information(let source):
+      dataSource[.history] = source.recentSearchs.map(\.rowDatum)
       dataSource[.trending] = source.trending.rowData
       dataSource[.highlight] = source.highlight.rowData
       viewController?.applySnapshot(.information(dataSource))

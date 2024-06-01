@@ -43,6 +43,7 @@ public final class SearchInteractor: SearchDataStore {
   
   public var isLoading: Bool = false
   public var searchResults: SearchFeature.SearchApi.Response?
+  public var recentSearches: [SearchFeature.SearchApi.Response.Item]
   
   // MARK: - Interface
   public var worker: any SearchWorkerInterface
@@ -67,20 +68,20 @@ public final class SearchInteractor: SearchDataStore {
     self.topLoser = state.topLoser
     self.newCoins = state.newCoins
     self.searchResults = state.searchResults
-    
+    self.recentSearches = state.recentSearches
     self.worker = worker
   }
   
-  @discardableResult
-  private func run(_ work: @MainActor @Sendable @escaping () async -> Void) -> Task<Void, Never> {
+  private func run(
+    id: AnyHashable = UUID(),
+    @_implicitSelfCapture work: @Sendable @escaping () async -> Void
+  ){
     let id = UUID()
     let task = Task {
       defer { cancellables[id] = nil }
       await work()
     }
     cancellables[id] = task
-    
-    return task
   }
 }
 
@@ -98,6 +99,9 @@ extension SearchInteractor {
         list.append(.exchange)
       }
     } else {
+      if !recentSearches.isEmpty {
+        list.append(.history)
+      }
       if hasTrendingData {
         list.append(.trending)
       }
@@ -145,6 +149,7 @@ extension SearchInteractor {
     public var topLoser: [SearchFeature.Coin]
     public var newCoins: [SearchFeature.Coin]
     public var searchResults: SearchFeature.SearchApi.Response?
+    public var recentSearches: [SearchFeature.SearchApi.Response.Item]
     
     public init(
       trendingCategory: [SearchFeature.TrendingCategory] = SearchFeature.TrendingCategory.allCases,
@@ -159,7 +164,8 @@ extension SearchInteractor {
       topGainer: [SearchFeature.Coin] = [],
       topLoser: [SearchFeature.Coin] = [],
       newCoins: [SearchFeature.Coin] = [],
-      searchResults: SearchFeature.SearchApi.Response? = nil
+      searchResults: SearchFeature.SearchApi.Response? = nil,
+      recentSearches: [SearchFeature.SearchApi.Response.Item] = []
     ) {
       self.trendingCategory = trendingCategory
       self.highlightCategory = highlightCategory
@@ -174,6 +180,7 @@ extension SearchInteractor {
       self.topLoser = topLoser
       self.newCoins = newCoins
       self.searchResults = searchResults
+      self.recentSearches = recentSearches
     }
   }
 }
@@ -181,10 +188,11 @@ extension SearchInteractor {
 // MARK: - BusinessLogic
 extension SearchInteractor: SearchBusinessLogic {
   public func prepare() async {
-    if !worker.loadSearchHistory().isEmpty {
-      
-    }
     do {
+      let loaded = try worker.loadSearchHistory()
+      if !loaded.isEmpty {
+        recentSearches = loaded
+      }
       let trendingResponse = try await worker.getTrending()
       trendingCoins = trendingResponse.coins
       trendingNFTs = trendingResponse.nfts
@@ -196,79 +204,89 @@ extension SearchInteractor: SearchBusinessLogic {
       newCoins = highlightResponse.newCoins
       
       await presenter?.updateList(updateListResponse)
-    } catch is CancellationError {
-      
     } catch {
-      
+      guard !(error is CancellationError) else { return }
+      print(error)
     }
   }
   
   public func searchFieldChanged(_ text: String?) {
+    guard
+      let text, !text.isEmpty
+    else {
+      cancelSearchApiTask()
+      return
+    }
+    self.text = text
+    isLoading = true
+    buildTextStream()
+    textStream.send(text)
+    run { await presenter?.updateList(.loading) }
+  }
+  
+  private func buildTextStream() {
     let id: AnyHashable = CancelTask.searchApi
-    if let text, !text.isEmpty {
-      self.text = text
-      isLoading = true
-      run { [weak self] in
-        guard let self else { return }
-        self.presenter?.updateList(.loading)
-      }
-      if cancellables[id] == nil {
-        let task = Task {
-          do {
-            try await textStream
-              .debounce(for: 1, scheduler: DispatchQueue.main)
-              .sink { [weak self] in
-                self?.searchApi($0)
-              }
-              .stream
-          } catch { }
-        }
-        cancellables[id] = task
-      }
-      textStream.send(text)
-    } else {
-      cancellables[id]?.cancel()
-      cancellables[id] = nil
-      searchResults = nil
-      run { [weak self] in
-        guard let self else { return }
-        self.presenter?.updateList(updateListResponse)
+    guard cancellables[id] == nil else { return }
+    run(id: id) {
+      do {
+        try await textStream
+          .debounce(for: 1, scheduler: DispatchQueue.main)
+          .sink { [weak self] in
+            self?.searchApi($0)
+          }
+          .stream
+      } catch {
+        
       }
     }
   }
   
   private func searchApi(_ query: String) {
-    let id = UUID()
-    let task = Task {
-      defer { cancellables[id] = nil }
+    run {
       do {
         var result = try await worker.search(request: .init(query: query))
+        try Task.checkCancellation()
         result.coins = Array(result.coins.prefix(5))
         result.nfts = Array(result.nfts.prefix(5))
         result.exchanges = Array(result.exchanges.prefix(5))
         searchResults = result
-        
+        try saveRecentSearch()
         await presenter?.updateList(.search(result))
-      } catch is CancellationError {
       } catch {
+        guard !(error is CancellationError) else { return }
         print(error)
       }
     }
-    cancellables[id] = task
+  }
+  
+  private func saveRecentSearch() throws {
+    guard let searchData else { return }
+    try Task.checkCancellation()
+    try worker.saveSearchHistory(searchData)
+    if recentSearches.firstIndex(of: searchData) == nil {
+      recentSearches.append(searchData)
+      if recentSearches.count > 3 {
+        recentSearches.removeFirst()
+      }
+    }
+  }
+  
+  private func cancelSearchApiTask() {
+    cancellables[CancelTask.searchApi]?.cancel()
+    cancellables[CancelTask.searchApi] = nil
+    searchResults = nil
+    run { await presenter?.updateList(updateListResponse) }
   }
   
   public func categoryTapped(_ request: SearchFeature.CategoryTapped.Request) {
     let section = sectionList[request.indexPath.section]
     switch section {
     case .trending:
-      selectedTrendingCategory = SearchFeature.TrendingCategory(rawValue: request.indexPath.row) ?? selectedTrendingCategory
+      selectedTrendingCategory = .init(rawValue: request.indexPath.row) ?? selectedTrendingCategory
       updateTrendingSection()
     case .highlight:
-      selectedHighlightCategory = SearchFeature.HighlightCategory(rawValue: request.indexPath.row) ?? selectedHighlightCategory
-      run { [weak self] in
-        guard let self else { return }
-        self.presenter?.updateSection(.highlight(self.updateHighlight))
-      }
+      selectedHighlightCategory = .init(rawValue: request.indexPath.row) ?? selectedHighlightCategory
+      run { await presenter?.updateSection(.highlight(updateHighlight)) }
     default:
       break
     }
@@ -280,10 +298,7 @@ extension SearchInteractor: SearchBusinessLogic {
   }
   
   private func updateTrendingSection() {
-    run { [weak self] in
-      guard let self else { return }
-      self.presenter?.updateSection(.trending(self.updateTrending))
-    }
+    run { await presenter?.updateSection(.trending(updateTrending)) }
   }
 }
 
@@ -296,6 +311,7 @@ private extension SearchInteractor {
   var updateListResponse: SearchFeature.UpdateList.Response {
     .information(
       .init(
+        recentSearchs: recentSearches,
         trending: updateTrending,
         highlight: updateHighlight
       )
