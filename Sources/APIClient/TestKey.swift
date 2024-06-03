@@ -1,5 +1,8 @@
+#if DEBUG
+import Foundation
+
 public extension ApiClient {
-  static let test: Self = .init(
+  static let preview: Self = .init(
     trending: {
       return try .ok(.init(body: .json(decode(trendingData.data(using: .utf8)!))))
     },
@@ -10,9 +13,25 @@ public extension ApiClient {
       return try .ok(.init(body: .json(decode(newCoinsData.data(using: .utf8)!))))
     },
     search: { _ in
-      fatalError()
+      return .ok(.init(body: .json(.init())))
     }
   )
+  
+  static let error: Self = .init(
+    trending: { throw _Error.synthetic },
+    topGainerAndLoser: { throw _Error.synthetic },
+    newCoins: { throw _Error.synthetic },
+    search: { _ in throw _Error.synthetic }
+  )
+  enum _Error: Error, LocalizedError {
+    public var errorDescription: String? {
+      """
+      서버로 부터 데이터를 받아올 수 있는 양을 초과했습니다.
+      live value가 아닌, test value로 변경시켜주세요.
+      """
+    }
+    case synthetic
+  }
 }
 
 private let trendingData = """
@@ -5482,3 +5501,4 @@ let newCoinsData = """
   },
 ]
 """
+#endif
