@@ -1,6 +1,7 @@
 import Foundation
 
 // MARK: - Read in Interactor
+/// View Model Middleware
 @MainActor
 public protocol SearchPresentationLogic: AnyObject {
   func updateList(_ response: SearchFeature.UpdateList.Response)
