@@ -51,8 +51,8 @@ public final class SearchInteractor: SearchDataStore {
   public var presenter: (any SearchPresentationLogic)?
   /// var navigate: (model) -> Void
   
-  /// 글로벌 변수로 뺄 수 있을 거 같아보입니다.
   private var cancellables: [AnyHashable: Task<Void, Never>] = [:]
+  private var _lock: NSLock = .init()
   
   public init(
     state: State = .init(),
@@ -75,13 +75,31 @@ public final class SearchInteractor: SearchDataStore {
   
   private func run(
     id: AnyHashable = UUID(),
-    @_implicitSelfCapture work: @Sendable @escaping () async -> Void
+    @_implicitSelfCapture work: @Sendable @escaping () async throws -> Void,
+    @_implicitSelfCapture errorHandler: @Sendable @escaping (Error) async -> Void = { _ in }
   ){
-    let task = Task {
-      defer { cancellables[id] = nil }
-      await work()
+    @Sendable func lock(_ work: @Sendable @escaping () -> Void) {
+      _lock.lock()
+      work()
+      _lock.unlock()
     }
-    cancellables[id] = task
+    let task = Task {
+      defer {
+        lock { [weak self] in
+          self?.cancellables[id] = nil
+        }
+      }
+      do {
+        try await work()
+      } catch {
+        guard !Task.isCancelled else { return }
+        await errorHandler(error)
+      }
+    }
+    
+    lock { [weak self] in
+      self?.cancellables[id] = task
+    }
   }
 }
 
@@ -233,34 +251,29 @@ extension SearchInteractor: SearchBusinessLogic {
     let id: AnyHashable = CancelTask.searchApi
     guard cancellables[id] == nil else { return }
     run(id: id) {
-      do {
-        try await textStream
-          .debounce(for: 1, scheduler: DispatchQueue.main)
-          .sink { [weak self] in
-            self?.searchApi($0)
-          }
-          .stream
-      } catch { }
+      try await textStream
+        .debounce(for: 1, scheduler: DispatchQueue.main)
+        .sink { [weak self] in
+          self?.searchApi($0)
+        }
+        .stream
     }
   }
   
   private func searchApi(_ query: String) {
     run {
-      do {
-        var result = try await worker.search(request: .init(query: query))
-        try Task.checkCancellation()
-        result.coins = Array(result.coins.prefix(5))
-        result.nfts = Array(result.nfts.prefix(5))
-        result.exchanges = Array(result.exchanges.prefix(5))
-        searchResults = result
-        try saveRecentSearch()
-        await presenter?.updateList(.search(result))
-      } catch {
-        guard !(error is CancellationError) else { return }
-        let destination: SearchFeature.Destination = .alert(message: error.localizedDescription)
-        self.destination = destination
-        await presenter?.changeDestination(destination)
-      }
+      var result = try await worker.search(request: .init(query: query))
+      try Task.checkCancellation()
+      result.coins = Array(result.coins.prefix(5))
+      result.nfts = Array(result.nfts.prefix(5))
+      result.exchanges = Array(result.exchanges.prefix(5))
+      searchResults = result
+      try saveRecentSearch()
+      await presenter?.updateList(.search(result))
+    } errorHandler: { error in
+      let destination: SearchFeature.Destination = .alert(message: error.localizedDescription)
+      self.destination = destination
+      await presenter?.changeDestination(destination)
     }
   }
   
