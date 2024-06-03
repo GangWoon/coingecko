@@ -2,21 +2,17 @@ import ViewControllerHelper
 import SearchFeature
 import ViewHelper
 import ApiClient
-import Combine
 import UIKit
 
 public final class SearchViewController: BaseViewController {
   public var interactor: any SearchDataStore & SearchBusinessLogic
   private var datasource: UITableViewDiffableDataSource<SearchFeature.SectionType, SearchFeature.RowData>!
   
-  private var loadingStateStream: CurrentValueSubject<Bool, Never>
-  private var cancellables: Set<AnyCancellable> = []
-  
+  private var indicatorView: UIActivityIndicatorView!
   private var hideKeyboard: (() -> Void)?
   
   public init(interactor: any SearchDataStore & SearchBusinessLogic) {
     self.interactor = interactor
-    self.loadingStateStream = .init(interactor.isLoading)
     super.init(nibName: nil, bundle: nil)
   }
   
@@ -91,14 +87,7 @@ public final class SearchViewController: BaseViewController {
       indicatorView.centerXAnchor.constraint(equalTo: superView.centerXAnchor),
       indicatorView.centerYAnchor.constraint(equalTo: superView.centerYAnchor, constant: -80)
     ])
-    loadingStateStream
-      .sink { [weak indicatorView] state in
-        indicatorView?.isHidden = !state
-        state
-        ? indicatorView?.startAnimating()
-        : indicatorView?.stopAnimating()
-      }
-      .store(in: &cancellables)
+    self.indicatorView = indicatorView
   }
   
   private func buildListDataSource(tableView: UITableView) {
@@ -198,9 +187,9 @@ extension SearchViewController: SearchDisplayLogic {
       items.forEach { key, value in
         snapShot.appendItems(value, toSection: key)
       }
-      loadingStateStream.send(false)
+      indicatorView.stopAnimating()
     case .loading:
-      loadingStateStream.send(true)
+      indicatorView.startAnimating()
     }
     
     datasource.apply(snapShot, animatingDifferences: false)
