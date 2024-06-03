@@ -5,6 +5,7 @@ import Foundation
 public protocol SearchPresentationLogic: AnyObject {
   func updateList(_ response: SearchFeature.UpdateList.Response)
   func updateSection(_ response: SearchFeature.UpdateList.ResponseType)
+  func changeDestination(_ destination: SearchFeature.Destination)
 }
 
 // MARK: - Read in View
@@ -15,6 +16,7 @@ public protocol SearchDisplayLogic: AnyObject {
     _ viewModel: [SearchFeature.RowData],
     section: SearchFeature.SectionType
   )
+  func presentAlert(message: String)
 }
 
 public final class SearchPresenter {
@@ -42,6 +44,13 @@ extension SearchPresenter: SearchPresentationLogic {
       viewController?.applySnapshot(.loading)
     case .search(let source):
       viewController?.applySnapshot(.search(source.rowData))
+    }
+  }
+  
+  public func changeDestination(_ destination: SearchFeature.Destination) {
+    switch destination {
+    case .alert(let message):
+      viewController?.presentAlert(message: message)
     }
   }
 }

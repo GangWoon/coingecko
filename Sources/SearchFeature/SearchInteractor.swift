@@ -27,6 +27,7 @@ public protocol SearchBusinessLogic {
 }
 
 public final class SearchInteractor: SearchDataStore {
+  public var destination: SearchFeature.Destination?
   public var text: String
   private var textStream = PassthroughSubject<String, Never>()
   
@@ -76,7 +77,6 @@ public final class SearchInteractor: SearchDataStore {
     id: AnyHashable = UUID(),
     @_implicitSelfCapture work: @Sendable @escaping () async -> Void
   ){
-    let id = UUID()
     let task = Task {
       defer { cancellables[id] = nil }
       await work()
@@ -136,6 +136,7 @@ extension SearchInteractor {
     var hasHighlightData: Bool {
       !trendingCoins.isEmpty || !trendingNFTs.isEmpty || !trendingCategories.isEmpty
     }
+    public var destination: SearchFeature.Destination?
     public var trendingCategory: [SearchFeature.TrendingCategory]
     public var highlightCategory: [SearchFeature.HighlightCategory]
     public var text: String
@@ -152,6 +153,7 @@ extension SearchInteractor {
     public var recentSearches: [SearchFeature.SearchApi.Response.Item]
     
     public init(
+      destination: SearchFeature.Destination? = nil,
       trendingCategory: [SearchFeature.TrendingCategory] = SearchFeature.TrendingCategory.allCases,
       highlightCategory: [SearchFeature.HighlightCategory] = SearchFeature.HighlightCategory.allCases,
       text: String = "",
@@ -167,6 +169,7 @@ extension SearchInteractor {
       searchResults: SearchFeature.SearchApi.Response? = nil,
       recentSearches: [SearchFeature.SearchApi.Response.Item] = []
     ) {
+      self.destination = destination
       self.trendingCategory = trendingCategory
       self.highlightCategory = highlightCategory
       self.text = text
@@ -206,7 +209,9 @@ extension SearchInteractor: SearchBusinessLogic {
       await presenter?.updateList(updateListResponse)
     } catch {
       guard !(error is CancellationError) else { return }
-      print(error)
+      let destination: SearchFeature.Destination = .alert(message: error.localizedDescription)
+      self.destination = destination
+      await presenter?.changeDestination(destination)
     }
   }
   
@@ -235,9 +240,7 @@ extension SearchInteractor: SearchBusinessLogic {
             self?.searchApi($0)
           }
           .stream
-      } catch {
-        
-      }
+      } catch { }
     }
   }
   
@@ -254,7 +257,9 @@ extension SearchInteractor: SearchBusinessLogic {
         await presenter?.updateList(.search(result))
       } catch {
         guard !(error is CancellationError) else { return }
-        print(error)
+        let destination: SearchFeature.Destination = .alert(message: error.localizedDescription)
+        self.destination = destination
+        await presenter?.changeDestination(destination)
       }
     }
   }
@@ -272,8 +277,9 @@ extension SearchInteractor: SearchBusinessLogic {
   }
   
   private func cancelSearchApiTask() {
-    cancellables[CancelTask.searchApi]?.cancel()
-    cancellables[CancelTask.searchApi] = nil
+    let id = CancelTask.searchApi
+    cancellables[id]?.cancel()
+    cancellables[id] = nil
     searchResults = nil
     run { await presenter?.updateList(updateListResponse) }
   }

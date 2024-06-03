@@ -1,3 +1,4 @@
+import struct HTTPClient.UndocumentedPayload
 import RecentSearchesClient
 import Foundation
 import ApiClient
@@ -38,8 +39,8 @@ public final class SearchWorker: SearchWorkerInterface {
     case .ok(let response):
       return response.body.json.domain
       
-    case .undocumented:
-      return .empty
+    case .undocumented(statusCode: let code, let payload):
+      throw _Error.rateLimitExceeded(code: code, payload: payload)
     }
   }
   
@@ -54,8 +55,7 @@ public final class SearchWorker: SearchWorkerInterface {
       topGainer = response.body.json.sorted(by: >).map(\.domain)
       topLoser = response.body.json.sorted(by: <).map(\.domain)
     case .undocumented(statusCode: let code, let payload):
-      topGainer = []
-      topLoser = []
+      throw _Error.rateLimitExceeded(code: code, payload: payload)
     }
     
     try Task.checkCancellation()
@@ -63,8 +63,8 @@ public final class SearchWorker: SearchWorkerInterface {
     switch try await newCoins {
     case .ok(let response):
       newCoinList = response.body.json.map(\.domain)
-    case .undocumented:
-      newCoinList = []
+    case .undocumented(statusCode: let code, let payload):
+      throw _Error.rateLimitExceeded(code: code, payload: payload)
     }
     
     return .init(
@@ -81,9 +81,37 @@ public final class SearchWorker: SearchWorkerInterface {
     switch response {
     case .ok(let response):
       return response.body.json.domain
-    case .undocumented:
-      fatalError()
+    case .undocumented(statusCode: let code, let payload):
+      throw _Error.rateLimitExceeded(code: code, payload: payload)
     }
+  }
+}
+
+private extension SearchWorker {
+  enum _Error: Error, CustomDebugStringConvertible, LocalizedError {
+    var debugDescription: String {
+      switch self {
+      case .rateLimitExceeded(code: let code, payload: let payload):
+              """
+              code: \(code)
+              headerFields: \(payload.headerFields)
+              body: \(
+              payload.body != nil
+              ? String(data: payload.body!, encoding: .utf8) ?? "<nil>"
+              : "<nil>"
+              )
+              """
+      }
+    }
+    
+    var errorDescription: String? {
+      """
+      서버로 부터 데이터를 받아올 수 있는 양을 초과했습니다.
+      live value가 아닌, test value로 변경시켜주세요.
+      """
+    }
+    
+    case rateLimitExceeded(code: Int, payload: UndocumentedPayload)
   }
 }
 

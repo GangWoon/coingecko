@@ -41,6 +41,7 @@ public final class SearchViewController: BaseViewController {
   
   private func buildSearchField() -> NSLayoutYAxisAnchor {
     let textField = SearchTextField()
+    textField.delegate = self
     textField.translatesAutoresizingMaskIntoConstraints = false
     view.addSubview(textField)
     NSLayoutConstraint.activate([
@@ -178,6 +179,12 @@ extension SearchViewController: UITableViewDelegate {
   }
 }
 
+extension SearchViewController: UITextFieldDelegate {
+  public func textFieldShouldReturn(_ textField: UITextField) -> Bool {
+    textField.resignFirstResponder()
+  }
+}
+
 extension SearchViewController: SearchDisplayLogic {
   public func applySnapshot(_ viewModel: SearchFeature.UpdateList.ViewModel) {
     var snapShot = NSDiffableDataSourceSnapshot<SearchFeature.SectionType, SearchFeature.RowData>()
@@ -196,7 +203,7 @@ extension SearchViewController: SearchDisplayLogic {
       loadingStateStream.send(true)
     }
     
-    datasource.apply(snapShot)
+    datasource.apply(snapShot, animatingDifferences: false)
   }
   
   public func reloadSection(
@@ -207,7 +214,17 @@ extension SearchViewController: SearchDisplayLogic {
     let items = snapshot.itemIdentifiers(inSection: section)
     snapshot.deleteItems(items)
     snapshot.appendItems(viewModel, toSection: section)
-    datasource.apply(snapshot)
+    datasource.apply(snapshot, animatingDifferences: false)
+  }
+  
+  public func presentAlert(message: String) {
+    let alert = UIAlertController(
+      title: "서버 오류",
+      message: message,
+      preferredStyle: .alert
+    )
+    alert.addAction(.init(title: "확인", style: .cancel))
+    present(alert, animated: true)
   }
 }
 
@@ -279,9 +296,7 @@ private extension SearchFeature.RowData.Price {
 #if DEBUG
 @available(iOS 17.0, *)
 #Preview {
-  let builder = SearchSceneBuilder(
-    dependency: .init(work: SearchWorker(apiClient: .test))
-  )
+  let builder = SearchSceneBuilder(dependency: .live)
   return builder.build()
 }
 #endif
