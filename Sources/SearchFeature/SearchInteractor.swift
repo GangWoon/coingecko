@@ -29,7 +29,7 @@ public protocol SearchBusinessLogic {
 public final class SearchInteractor: SearchDataStore {
   public var destination: SearchFeature.Destination?
   public var text: String
-  private var textStream = PassthroughSubject<String, Never>()
+  private var textStream: CurrentValueSubject<String, Never>
   
   public var isTrendingExpanded: Bool
   public var selectedTrendingCategory: SearchFeature.TrendingCategory
@@ -59,6 +59,7 @@ public final class SearchInteractor: SearchDataStore {
     worker: any SearchWorkerInterface
   ) {
     self.text = state.text
+    self.textStream = .init(state.text)
     self.isTrendingExpanded = state.isTrendingExpanded
     self.selectedTrendingCategory = state.selectedTrendingCategory
     self.trendingCoins = state.trendingCoins
@@ -251,12 +252,13 @@ extension SearchInteractor: SearchBusinessLogic {
     let id: AnyHashable = CancelTask.searchApi
     guard cancellables[id] == nil else { return }
     run(id: id) {
-      try await textStream
+      let stream = textStream
         .debounce(for: 1, scheduler: DispatchQueue.main)
-        .sink { [weak self] in
-          self?.searchApi($0)
-        }
         .stream
+      
+      for await query in stream {
+        searchApi(query)
+      }
     }
   }
   
