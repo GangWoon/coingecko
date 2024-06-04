@@ -26,7 +26,8 @@ let package = Package(
       name: "SearchFeature",
       dependencies: [
         "ApiClientLive",
-        "RecentSearchesClientLive"
+        "RecentSearchesClientLive",
+        "CombineExt"
       ]
     ),
     .target(
@@ -71,7 +72,7 @@ let package = Package(
     ),
     .target(name: "CombineExt"),
     .testTarget(
-      name: "AppPackageTests",
-      dependencies: ["AppFeature"]),
+      name: "SearchFeatureTests",
+      dependencies: ["SearchFeature"]),
   ]
 )

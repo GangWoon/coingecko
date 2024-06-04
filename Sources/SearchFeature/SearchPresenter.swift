@@ -3,7 +3,7 @@ import Foundation
 // MARK: - Read in Interactor
 /// View Model Middleware
 @MainActor
-public protocol SearchPresentationLogic: AnyObject {
+public protocol SearchPresentationLogic {
   func updateList(_ response: SearchFeature.UpdateList.Response)
   func updateSection(_ response: SearchFeature.UpdateList.ResponseType)
   func changeDestination(_ destination: SearchFeature.Destination)

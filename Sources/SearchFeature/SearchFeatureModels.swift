@@ -8,7 +8,7 @@ public enum SearchFeature {
   }
   
   public enum FetchTrending {
-    public struct Response {
+    public struct Response: Equatable {
       static let empty = Self(coins: [], nfts: [], categories: [])
       var coins: [Coin]
       var nfts: [NFT]
@@ -17,7 +17,7 @@ public enum SearchFeature {
   }
   
   public enum FetchHighlight {
-    public struct Response {
+    public struct Response: Equatable {
       static let empty = Self(topGainer: [], topLoser: [], newCoins: [])
       public var topGainer: [Coin]
       public var topLoser: [Coin]
@@ -30,7 +30,7 @@ public enum SearchFeature {
       var query: String
     }
     
-    public struct Response {
+    public struct Response: Equatable {
       public struct Item: Equatable {
         var thumb: String
         var symbol: String
@@ -60,19 +60,19 @@ public enum SearchFeature {
       case highlight(Response.Information.Highlight)
     }
     
-    public enum Response {
+    public enum Response: Equatable {
       case information(Information)
-      public struct Information {
+      public struct Information: Equatable {
         public var recentSearchs: [SearchApi.Response.Item]
         public var trending: Trending
-        public struct Trending {
+        public struct Trending: Equatable {
           var data: FetchTrending.Response
           var isExpanded: Bool
           var selectedCategory: TrendingCategory
         }
         
         public var highlight: Highlight
-        public struct Highlight {
+        public struct Highlight: Equatable {
           var data: FetchHighlight.Response
           var selectedCategory: HighlightCategory
         }
@@ -97,7 +97,7 @@ public enum SearchFeature {
 }
 
 extension SearchFeature {
-  public struct Coin {
+  public struct Coin: Equatable {
     public var id: String
     public var coinId: Int?
     public var name: String
@@ -106,21 +106,67 @@ extension SearchFeature {
     public var thumb: String?
     public var currentPrice: Double?
     public var priceChangePercentage24H: Double?
+    
+    public init(
+      id: String,
+      coinId: Int? = nil,
+      name: String,
+      symbol: String,
+      marketCapRank: Int? = nil,
+      thumb: String? = nil,
+      currentPrice: Double? = nil,
+      priceChangePercentage24H: Double? = nil
+    ) {
+      self.id = id
+      self.coinId = coinId
+      self.name = name
+      self.symbol = symbol
+      self.marketCapRank = marketCapRank
+      self.thumb = thumb
+      self.currentPrice = currentPrice
+      self.priceChangePercentage24H = priceChangePercentage24H
+    }
   }
   
-  public struct NFT {
+  public struct NFT: Equatable {
     public var id: String
     public var name: String
     public var symbol: String
     public var thumb: String
     public var floorPriceInNativeCurrency: Double
     public var floorPrice24HPercentageChange: Double
+    
+    public init(
+      id: String,
+      name: String,
+      symbol: String,
+      thumb: String,
+      floorPriceInNativeCurrency: Double,
+      floorPrice24HPercentageChange: Double
+    ) {
+      self.id = id
+      self.name = name
+      self.symbol = symbol
+      self.thumb = thumb
+      self.floorPriceInNativeCurrency = floorPriceInNativeCurrency
+      self.floorPrice24HPercentageChange = floorPrice24HPercentageChange
+    }
   }
   
-  public struct Category {
+  public struct Category: Equatable {
     public var id: Int
     public var name: String
     public var marketCap1HChange: Double
+    
+    public init(
+      id: Int,
+      name: String,
+      marketCap1HChange: Double
+    ) {
+      self.id = id
+      self.name = name
+      self.marketCap1HChange = marketCap1HChange
+    }
   }
 }
 

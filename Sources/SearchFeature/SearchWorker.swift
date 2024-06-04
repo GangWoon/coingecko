@@ -3,7 +3,7 @@ import RecentSearchesClient
 import Foundation
 import ApiClient
 
-public protocol SearchWorkerInterface: AnyObject {
+public protocol SearchWorkerInterface {
   func loadSearchHistory() throws -> [SearchFeature.SearchApi.Response.Item]
   func saveSearchHistory(_ item: SearchFeature.SearchApi.Response.Item) throws
   func getTrending() async throws -> SearchFeature.FetchTrending.Response
