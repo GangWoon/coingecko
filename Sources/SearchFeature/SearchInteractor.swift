@@ -10,8 +10,6 @@ import Combine
 /// 결국 Interactor라는 객체는 이 둘의 조합을 이루어서 엑션을 받았을 때 상태값을 갱신함으로 써 외부로 새로운 상태값을 노출시키는게 포인트라고 생각합니다.
 /// 분리해서 이득이 되는 경우가 궁금합니다.
 public protocol SearchDataStore: AnyObject {
-  var text: String { get }
-  var isLoading: Bool { get }
   var sectionList: [SearchFeature.SectionType] { get }
   var selectedTrendingCategory: SearchFeature.TrendingCategory { get }
   var selectedHighlightCategory: SearchFeature.HighlightCategory { get }
@@ -28,7 +26,6 @@ public protocol SearchBusinessLogic {
 
 public final class SearchInteractor: SearchDataStore {
   public var destination: SearchFeature.Destination?
-  public var text: String
   private var textStream: CurrentValueSubject<String, Never>
   
   public var isTrendingExpanded: Bool
@@ -42,7 +39,6 @@ public final class SearchInteractor: SearchDataStore {
   public var topLoser: [SearchFeature.Coin]
   public var newCoins: [SearchFeature.Coin]
   
-  public var isLoading: Bool = false
   public var searchResults: SearchFeature.SearchApi.Response?
   public var recentSearches: [SearchFeature.SearchApi.Response.Item]
   
@@ -58,7 +54,6 @@ public final class SearchInteractor: SearchDataStore {
     state: State = .init(),
     worker: any SearchWorkerInterface
   ) {
-    self.text = state.text
     self.textStream = .init(state.text)
     self.isTrendingExpanded = state.isTrendingExpanded
     self.selectedTrendingCategory = state.selectedTrendingCategory
@@ -241,8 +236,6 @@ extension SearchInteractor: SearchBusinessLogic {
       cancelSearchApiTask()
       return
     }
-    self.text = text
-    isLoading = true
     buildTextStream()
     textStream.send(text)
     run { await presenter?.updateList(.loading) }
