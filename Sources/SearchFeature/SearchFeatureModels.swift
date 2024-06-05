@@ -3,10 +3,6 @@ import Foundation
 /// 개발자의 역량이 가장 많이 반영되는 공간
 /// 개념을 분리시키는 단위가 명확하지 않기 때문에 어색함을 많이 느낍니다.
 public enum SearchFeature {
-  public enum Destination {
-    case alert(message: String)
-  }
-  
   public enum FetchTrending {
     public struct Response: Equatable {
       static let empty = Self(coins: [], nfts: [], categories: [])
@@ -81,7 +77,7 @@ public enum SearchFeature {
       case search(SearchApi.Response)
     }
     
-    public enum ViewModel {
+    public enum ViewModel: Equatable {
       case information([SearchFeature.SectionType: [RowData]])
       case loading
       case search([SearchFeature.SectionType: [RowData]])

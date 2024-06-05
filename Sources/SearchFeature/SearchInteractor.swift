@@ -13,21 +13,21 @@ public protocol SearchBusinessLogic {
 }
 
 public final class SearchInteractor {
-  private var textStream: CurrentValueSubject<String, Never>
+  private var textStream: CurrentValueSubject<String, Never> = .init("")
   
-  public var isTrendingExpanded: Bool
-  public var selectedTrendingCategory: SearchFeature.TrendingCategory
-  public var trendingCoins: [SearchFeature.Coin]
-  public var trendingNFTs: [SearchFeature.NFT]
-  public var trendingCategories: [SearchFeature.Category]
+  public var isTrendingExpanded: Bool = false
+  public var selectedTrendingCategory: SearchFeature.TrendingCategory = .coin
+  public var trendingCoins: [SearchFeature.Coin] = []
+  public var trendingNFTs: [SearchFeature.NFT] = []
+  public var trendingCategories: [SearchFeature.Category] = []
   
-  public var selectedHighlightCategory: SearchFeature.HighlightCategory
-  public var topGainer: [SearchFeature.Coin]
-  public var topLoser: [SearchFeature.Coin]
-  public var newCoins: [SearchFeature.Coin]
+  public var selectedHighlightCategory: SearchFeature.HighlightCategory = .topGainers
+  public var topGainer: [SearchFeature.Coin] = []
+  public var topLoser: [SearchFeature.Coin] = []
+  public var newCoins: [SearchFeature.Coin] = []
   
   public var searchResults: SearchFeature.SearchApi.Response?
-  public var recentSearches: [SearchFeature.SearchApi.Response.Item]
+  public var recentSearches: [SearchFeature.SearchApi.Response.Item] = []
   
   // MARK: - Interface
   public var worker: any SearchWorkerInterface
@@ -37,22 +37,7 @@ public final class SearchInteractor {
   private var cancellables: [AnyHashable: Task<Void, Never>] = [:]
   private var _lock: NSLock = .init()
   
-  public init(
-    state: State = .init(),
-    worker: any SearchWorkerInterface
-  ) {
-    self.textStream = .init(state.text)
-    self.isTrendingExpanded = state.isTrendingExpanded
-    self.selectedTrendingCategory = state.selectedTrendingCategory
-    self.trendingCoins = state.trendingCoins
-    self.trendingNFTs = state.trendingNFTs
-    self.trendingCategories = state.trendingCategories
-    self.selectedHighlightCategory = state.selectedHighlightCategory
-    self.topGainer = state.topGainer
-    self.topLoser = state.topLoser
-    self.newCoins = state.newCoins
-    self.searchResults = state.searchResults
-    self.recentSearches = state.recentSearches
+  public init(worker: any SearchWorkerInterface) {
     self.worker = worker
   }
   
@@ -87,7 +72,7 @@ public final class SearchInteractor {
 }
 
 extension SearchInteractor {
-  public var sectionList: [SearchFeature.SectionType] {
+  var sectionList: [SearchFeature.SectionType] {
     var list: [SearchFeature.SectionType] = []
     if let searchResults {
       if !searchResults.coins.isEmpty {
@@ -119,74 +104,6 @@ extension SearchInteractor {
   var hasHighlightData: Bool {
     !trendingCoins.isEmpty || !trendingNFTs.isEmpty || !trendingCategories.isEmpty
   }
-  
-  public struct State {
-    public var sectionList: [SearchFeature.SectionType] {
-      var result: [SearchFeature.SectionType] = []
-      if hasTrendingData {
-        result.append(.trending(selectedTrendingCategory.rawValue))
-      }
-      if hasHighlightData {
-        result.append(.highlight(selectedHighlightCategory.rawValue))
-      }
-      return result
-    }
-    var hasTrendingData: Bool {
-      !trendingCoins.isEmpty || !trendingNFTs.isEmpty || !trendingCategories.isEmpty
-    }
-    var hasHighlightData: Bool {
-      !trendingCoins.isEmpty || !trendingNFTs.isEmpty || !trendingCategories.isEmpty
-    }
-    public var destination: SearchFeature.Destination?
-    public var trendingCategory: [SearchFeature.TrendingCategory]
-    public var highlightCategory: [SearchFeature.HighlightCategory]
-    public var text: String
-    public var isTrendingExpanded: Bool
-    public var selectedTrendingCategory: SearchFeature.TrendingCategory
-    public var trendingCoins: [SearchFeature.Coin]
-    public var trendingNFTs: [SearchFeature.NFT]
-    public var trendingCategories: [SearchFeature.Category]
-    public var selectedHighlightCategory: SearchFeature.HighlightCategory
-    public var topGainer: [SearchFeature.Coin]
-    public var topLoser: [SearchFeature.Coin]
-    public var newCoins: [SearchFeature.Coin]
-    public var searchResults: SearchFeature.SearchApi.Response?
-    public var recentSearches: [SearchFeature.SearchApi.Response.Item]
-    
-    public init(
-      destination: SearchFeature.Destination? = nil,
-      trendingCategory: [SearchFeature.TrendingCategory] = SearchFeature.TrendingCategory.allCases,
-      highlightCategory: [SearchFeature.HighlightCategory] = SearchFeature.HighlightCategory.allCases,
-      text: String = "",
-      isTrendingExpanded: Bool = false,
-      selectedTrendingCategory: SearchFeature.TrendingCategory = .coin,
-      trendingCoins: [SearchFeature.Coin] = [],
-      trendingNFTs: [SearchFeature.NFT] = [],
-      trendingCategories: [SearchFeature.Category] = [],
-      selectedHighlightCategory: SearchFeature.HighlightCategory = .topGainers,
-      topGainer: [SearchFeature.Coin] = [],
-      topLoser: [SearchFeature.Coin] = [],
-      newCoins: [SearchFeature.Coin] = [],
-      searchResults: SearchFeature.SearchApi.Response? = nil,
-      recentSearches: [SearchFeature.SearchApi.Response.Item] = []
-    ) {
-      self.destination = destination
-      self.trendingCategory = trendingCategory
-      self.highlightCategory = highlightCategory
-      self.text = text
-      self.isTrendingExpanded = isTrendingExpanded
-      self.selectedTrendingCategory = selectedTrendingCategory
-      self.trendingCoins = trendingCoins
-      self.trendingNFTs = trendingNFTs
-      self.trendingCategories = trendingCategories
-      self.selectedHighlightCategory = selectedHighlightCategory
-      self.topGainer = topGainer
-      self.topLoser = topLoser
-      self.newCoins = newCoins
-      self.searchResults = searchResults
-      self.recentSearches = recentSearches
-    }
-  }
 }
 
 // MARK: - BusinessLogic
@@ -210,8 +127,7 @@ extension SearchInteractor: SearchBusinessLogic {
       await presenter?.updateList(updateListResponse)
     } catch {
       guard !(error is CancellationError) else { return }
-      await presenter?
-        .changeDestination(.alert(message: error.localizedDescription))
+      await presenter?.presentAlert(message: error.localizedDescription)
     }
   }
   
@@ -252,8 +168,7 @@ extension SearchInteractor: SearchBusinessLogic {
       try saveRecentSearch()
       await presenter?.updateList(.search(result))
     } errorHandler: { error in
-      await presenter?
-        .changeDestination(.alert(message: error.localizedDescription))
+      await presenter?.presentAlert(message: error.localizedDescription)
     }
   }
   

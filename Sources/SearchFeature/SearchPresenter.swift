@@ -6,7 +6,7 @@ import Foundation
 public protocol SearchPresentationLogic {
   func updateList(_ response: SearchFeature.UpdateList.Response)
   func updateSection(_ response: SearchFeature.UpdateList.ResponseType)
-  func changeDestination(_ destination: SearchFeature.Destination)
+  func presentAlert(message: String)
 }
 
 // MARK: - Read in View
@@ -52,11 +52,8 @@ extension SearchPresenter: SearchPresentationLogic {
     }
   }
   
-  public func changeDestination(_ destination: SearchFeature.Destination) {
-    switch destination {
-    case .alert(let message):
-      viewController?.presentAlert(message: message)
-    }
+  public func presentAlert(message: String) {
+    viewController?.presentAlert(message: message)
   }
 }
 

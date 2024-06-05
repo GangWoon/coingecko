@@ -17,12 +17,7 @@ public struct SearchSceneBuilder {
   
   public func build() -> SearchViewController {
     let interactor = SearchInteractor(worker: dependency.worker)
-    let alertRouter = AlertRouter.live
-    let router = SearchRouter(
-      errorViewController: { [weak alertRouter] in
-        alertRouter?.presentErrorAlert(message: $0)
-      }
-    )
+    let router = SearchRouter()
     let viewController = SearchViewController(
       interactor: interactor,
       router: router
