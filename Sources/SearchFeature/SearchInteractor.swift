@@ -13,7 +13,6 @@ public protocol SearchBusinessLogic {
 }
 
 public final class SearchInteractor {
-  public var destination: SearchFeature.Destination?
   private var textStream: CurrentValueSubject<String, Never>
   
   public var isTrendingExpanded: Bool
@@ -211,9 +210,8 @@ extension SearchInteractor: SearchBusinessLogic {
       await presenter?.updateList(updateListResponse)
     } catch {
       guard !(error is CancellationError) else { return }
-      let destination: SearchFeature.Destination = .alert(message: error.localizedDescription)
-      self.destination = destination
-      await presenter?.changeDestination(destination)
+      await presenter?
+        .changeDestination(.alert(message: error.localizedDescription))
     }
   }
   
@@ -254,9 +252,8 @@ extension SearchInteractor: SearchBusinessLogic {
       try saveRecentSearch()
       await presenter?.updateList(.search(result))
     } errorHandler: { error in
-      let destination: SearchFeature.Destination = .alert(message: error.localizedDescription)
-      self.destination = destination
-      await presenter?.changeDestination(destination)
+      await presenter?
+        .changeDestination(.alert(message: error.localizedDescription))
     }
   }
   
