@@ -1,9 +1,10 @@
 # coingecko
+
 ![image](https://github.com/GangWoon/coingecko/assets/48466830/8104f3f4-df20-4b20-90e2-8f4d9ce7bf84)
 coingecko 카피 앱입니다. 
 
 ## 파일 구조
-<img width="386" alt="Screenshot 2024-06-06 at 02 01 10" src="https://github.com/GangWoon/coingecko/assets/48466830/903b98e3-c63b-4f33-8ec1-70cd1031f15f"> <br>
+ <img width="450" alt="Screenshot 2024-06-06 at 02 14 47" src="https://github.com/GangWoon/coingecko/assets/48466830/263fab48-68e4-43dc-b933-5eda5bb802b0"> <br>
 **실행 파일 경로는 coingecko/App/coingecko.xcodeproj 입니다.**
 
 ## 구조
@@ -22,3 +23,17 @@ coingecko 카피 앱입니다.
 ### Presenter
 Interactor로 부터 전달 받은 상태 값을(Response) View에서 사용할 수 있는 상태(ViewModel)로 변경해주는 역활을 합니다. <br>
 적절한 View 갱신 로직을 호출하게 됩니다.
+
+**V - I - P** 관계는 protocol로 추상화 되있으며, Builder를 통해서 하나의 사이클로 만들었습니다.
+
+## Issue 
+[Task가 릴리즈 되지 않던 문제](https://github.com/GangWoon/coingecko/issues/1) <br>
+
+[AsyncStream 최소 버전 문제](https://github.com/GangWoon/coingecko/issues/2)
+
+## Clean Swift 사용 후기
+단방향 구조의 장점을 누릴 수 있다는 점은 정말 좋은거 같습니다.<br>
+하지만 각 레이어별로 전달하는 메세지(Request, Response, ViewModel)이 한 곳에서 정의되는 형태는 코드를 읽는 입장에서 매우 난해한 느낌을 받는 거 같습니다<br>
+메세지를 설계하는 입장에서도 명확한 정의가 없었기 때문에 개발자의 실력이 직접적으로 반영이 되는 공간이 였습니다.<br>
+뿐만 아니라 실질적인 RawData(String, Int, Bool, etc...)를 사용하는 형태가 아닌, 각 메세지로 전환하는 과정에서 발생하는 중복적인 코드 비용을 무시할 수 없었습니다.<br>
+뷰를 상태값 기반으로 preview test를 진행할 때에도 한계가 존재하는 구조였습니다.<br>
