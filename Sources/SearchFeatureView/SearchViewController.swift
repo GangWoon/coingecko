@@ -6,13 +6,18 @@ import UIKit
 
 public final class SearchViewController: BaseViewController {
   public var interactor: any SearchBusinessLogic
+  public var router: any SearchRoutingLogic
   private var datasource: UITableViewDiffableDataSource<SearchFeature.SectionType, SearchFeature.RowData>!
   
   private var indicatorView: UIActivityIndicatorView!
   private var hideKeyboard: (() -> Void)?
   
-  public init(interactor: any SearchBusinessLogic) {
+  public init(
+    interactor: any SearchBusinessLogic,
+    router: any SearchRoutingLogic
+  ) {
     self.interactor = interactor
+    self.router = router
     super.init(nibName: nil, bundle: nil)
   }
   
@@ -196,13 +201,7 @@ extension SearchViewController: SearchDisplayLogic {
   }
   
   public func presentAlert(message: String) {
-    let alert = UIAlertController(
-      title: "서버 오류",
-      message: message,
-      preferredStyle: .alert
-    )
-    alert.addAction(.init(title: "확인", style: .cancel))
-    present(alert, animated: true)
+    router.presentAlert(message: message)
   }
 }
 

@@ -6,8 +6,6 @@ public struct SearchSceneBuilder {
   let dependency: Dependency
   public struct Dependency {
     let worker: SearchWorkerInterface
-    ///  Maybe insert Navigator
-    ///  navigate: (model) -> Void
     public init(work: SearchWorkerInterface) {
       self.worker = work
     }
@@ -19,8 +17,18 @@ public struct SearchSceneBuilder {
   
   public func build() -> SearchViewController {
     let interactor = SearchInteractor(worker: dependency.worker)
-    let viewController = SearchViewController(interactor: interactor)
+    let alertRouter = AlertRouter.live
+    let router = SearchRouter(
+      errorViewController: { [weak alertRouter] in
+        alertRouter?.presentErrorAlert(message: $0)
+      }
+    )
+    let viewController = SearchViewController(
+      interactor: interactor,
+      router: router
+    )
     let presenter = SearchPresenter(viewController: viewController)
+    router.viewController = viewController
     interactor.presenter = presenter
     
     return viewController
