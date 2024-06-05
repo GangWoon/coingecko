@@ -30,7 +30,11 @@ public final class SearchPresenter {
 
 extension SearchPresenter: SearchPresentationLogic {
   public func updateSection(_ response: SearchFeature.UpdateList.ResponseType) {
-    viewController?.reloadSection(response.rowData, section: response.viewType)
+    viewController?
+      .reloadSection(
+        response.rowData,
+        section: response.viewType
+      )
   }
   
   public func updateList(_ response: SearchFeature.UpdateList.Response) {
@@ -38,8 +42,8 @@ extension SearchPresenter: SearchPresentationLogic {
     switch response {
     case .information(let source):
       dataSource[.history] = source.recentSearchs.map(\.rowDatum)
-      dataSource[.trending] = source.trending.rowData
-      dataSource[.highlight] = source.highlight.rowData
+      dataSource[.trending(source.trending.selectedCategory.rawValue)] = source.trending.rowData
+      dataSource[.highlight(source.highlight.selectedCategory.rawValue)] = source.highlight.rowData
       viewController?.applySnapshot(.information(dataSource))
     case .loading:
       viewController?.applySnapshot(.loading)
@@ -111,10 +115,10 @@ private extension SearchFeature.UpdateList.ResponseType {
   
   var viewType: SearchFeature.SectionType {
     switch self {
-    case .trending:
-      return .trending
-    case .highlight:
-      return .highlight
+    case .trending(let response):
+      return .trending(response.selectedCategory.rawValue)
+    case .highlight(let response):
+      return .highlight(response.selectedCategory.rawValue)
     }
   }
 }

@@ -5,13 +5,13 @@ import ApiClient
 import UIKit
 
 public final class SearchViewController: BaseViewController {
-  public var interactor: any SearchDataStore & SearchBusinessLogic
+  public var interactor: any SearchBusinessLogic
   private var datasource: UITableViewDiffableDataSource<SearchFeature.SectionType, SearchFeature.RowData>!
   
   private var indicatorView: UIActivityIndicatorView!
   private var hideKeyboard: (() -> Void)?
   
-  public init(interactor: any SearchDataStore & SearchBusinessLogic) {
+  public init(interactor: any SearchBusinessLogic) {
     self.interactor = interactor
     super.init(nibName: nil, bundle: nil)
   }
@@ -105,8 +105,7 @@ public final class SearchViewController: BaseViewController {
           )
           return cell
         }
-        let sectionType = self.interactor.sectionList[indexPath.section]
-        cell?.build(rowType(sectionType), state: datum.rowState)
+        cell?.build(rowType(indexPath.section), state: datum.rowState)
         
         return cell
       }
@@ -124,24 +123,14 @@ extension SearchViewController: UITableViewDelegate {
     _ tableView: UITableView,
     viewForHeaderInSection section: Int
   ) -> UIView? {
-    guard !interactor.sectionList.isEmpty else {
-      return nil
-    }
-    let sectionType = interactor.sectionList[section]
     let view = tableView.dequeueReusableHeaderFooterView(type: SearchListHeaderView.self)
-    var selectedIndex: Int = 0
-    switch sectionType {
-    case .trending:
-      selectedIndex =  interactor.selectedTrendingCategory.rawValue
-    case .highlight:
-      selectedIndex =  interactor.selectedHighlightCategory.rawValue
-    default:
-      break
-    }
+    let sectionType = datasource
+      .snapshot()
+      .sectionIdentifiers[section]
     view?.build(
       title: sectionType.title,
       buttonStates: buildButtonStates(sectionType, section: section),
-      selectedItem: selectedIndex
+      selectedItem: sectionType.selectedIndex
     )
     
     return view
@@ -182,7 +171,7 @@ extension SearchViewController: SearchDisplayLogic {
         .search(let dataSoruce):
       let items = dataSoruce
         .filter { !$0.value.isEmpty }
-        .sorted { $0.key.rawValue < $1.key.rawValue }
+        .sorted { $0.key.value.0 < $1.key.value.0 }
       snapShot.appendSections(items.map(\.key))
       items.forEach { key, value in
         snapShot.appendItems(value, toSection: key)
@@ -218,14 +207,22 @@ extension SearchViewController: SearchDisplayLogic {
 }
 
 private extension SearchViewController {
-  func rowType(_ section: SearchFeature.SectionType) -> SearchListRow.ViewType {
-    switch section {
+  func rowType(_ section: Int) -> SearchListRow.ViewType {
+    let sectionType = datasource.snapshot().sectionIdentifiers
+    switch sectionType[section] {
     case .history, .coin, .nft, .exchange:
       return .primary
-    case .trending:
-      return interactor.selectedTrendingCategory.viewType
-    case .highlight:
-      return interactor.selectedHighlightCategory.viewType
+    case .trending(let index):
+      switch index {
+      case 0:
+        return .secondary(hasRank: true)
+      case 1:
+        return .secondary(hasRank: false)
+      default:
+        return .primary
+      }
+    case .highlight(let index):
+      return .secondary(hasRank: index != 2)
     }
   }
 }
@@ -243,24 +240,16 @@ private extension SearchFeature.SectionType {
       return []
     }
   }
-}
-
-private extension SearchFeature.TrendingCategory {
-  var viewType: SearchListRow.ViewType {
+  
+  var selectedIndex: Int {
     switch self {
-    case .coin:
-      return .secondary(hasRank: true)
-    case .nft:
-      return .secondary(hasRank: false)
-    case .category:
-      return .primary
+    case .trending(let index):
+      return index
+    case .highlight(let index):
+      return index
+    default:
+      return 0
     }
-  }
-}
-
-private extension SearchFeature.HighlightCategory {
-  var viewType: SearchListRow.ViewType {
-    .secondary(hasRank: self != .newListings)
   }
 }
 

@@ -202,7 +202,7 @@ extension SearchFeature {
     }
   }
   
-  public enum SectionType: Int, Comparable {
+  public enum SectionType: Comparable, Hashable, Equatable {
     public var title: String {
       switch self {
       case .history:
@@ -219,9 +219,25 @@ extension SearchFeature {
         return "교환소"
       }
     }
-    case history = 0
-    case trending
-    case highlight
+    public var value: (Int, Int?) {
+      switch self {
+      case .history:
+        return (0, nil)
+      case .trending(let row):
+        return (1, row)
+      case .highlight(let row):
+        return (2, row)
+      case .coin:
+        return (3, nil)
+      case .nft:
+        return (4, nil)
+      case .exchange:
+        return (5, nil)
+      }
+    }
+    case history
+    case trending(Int)
+    case highlight(Int)
     case coin
     case nft
     case exchange
@@ -230,7 +246,14 @@ extension SearchFeature {
       lhs: SearchFeature.SectionType,
       rhs: SearchFeature.SectionType
     ) -> Bool {
-      lhs.rawValue < rhs.rawValue
+      lhs.value.0 < rhs.value.0
+    }
+    
+    public static func == (
+      lhs: SearchFeature.SectionType,
+      rhs: SearchFeature.SectionType
+    ) -> Bool {
+      lhs.value.0 == rhs.value.0
     }
   }
   

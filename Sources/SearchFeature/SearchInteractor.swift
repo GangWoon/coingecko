@@ -4,18 +4,6 @@ import CombineExt
 import Combine
 
 // MARK: - Read in View
-/// 해당 프로토콜은 상태값을 표현하는 역활이 아닌, 상태값을 변경 시켜주는 "object"여야 합니다.
-/// 단발성 상태값을 표현하는 프로토콜이기 때문에 초기값으로 세팅하는 걸 확인하는 상황이 아니라면 존재에 이유가 궁금해집니다.
-/// 반대로 BusinessLogic value, reference의 의존하지 않는 객체이기 때문에 추가적인 혼란이 발생합니다.
-/// 결국 Interactor라는 객체는 이 둘의 조합을 이루어서 엑션을 받았을 때 상태값을 갱신함으로 써 외부로 새로운 상태값을 노출시키는게 포인트라고 생각합니다.
-/// 분리해서 이득이 되는 경우가 궁금합니다.
-public protocol SearchDataStore: AnyObject {
-  var sectionList: [SearchFeature.SectionType] { get }
-  var selectedTrendingCategory: SearchFeature.TrendingCategory { get }
-  var selectedHighlightCategory: SearchFeature.HighlightCategory { get }
-}
-
-// MARK: - Read in View
 public protocol SearchBusinessLogic {
   func prepare() async
   
@@ -24,7 +12,7 @@ public protocol SearchBusinessLogic {
   func tappedExpandRow()
 }
 
-public final class SearchInteractor: SearchDataStore {
+public final class SearchInteractor {
   public var destination: SearchFeature.Destination?
   private var textStream: CurrentValueSubject<String, Never>
   
@@ -117,10 +105,10 @@ extension SearchInteractor {
         list.append(.history)
       }
       if hasTrendingData {
-        list.append(.trending)
+        list.append(.trending(selectedTrendingCategory.rawValue))
       }
       if hasHighlightData {
-        list.append(.highlight)
+        list.append(.highlight(selectedHighlightCategory.rawValue))
       }
     }
     
@@ -137,10 +125,10 @@ extension SearchInteractor {
     public var sectionList: [SearchFeature.SectionType] {
       var result: [SearchFeature.SectionType] = []
       if hasTrendingData {
-        result.append(.trending)
+        result.append(.trending(selectedTrendingCategory.rawValue))
       }
       if hasHighlightData {
-        result.append(.highlight)
+        result.append(.highlight(selectedHighlightCategory.rawValue))
       }
       return result
     }
