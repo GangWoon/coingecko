@@ -7,10 +7,13 @@ import UIKit
 public final class SearchViewController: BaseViewController {
   public var interactor: any SearchBusinessLogic
   public var router: any SearchRoutingLogic
-  private var datasource: UITableViewDiffableDataSource<SearchFeature.SectionType, SearchFeature.RowData>!
   
+  private var dataSource: DataSource!
+  private typealias DataSource = UITableViewDiffableDataSource<SearchFeature.SectionType, SearchFeature.RowData>
+  
+  private var searchField: SearchTextField!
+  private var tableView: UITableView!
   private var indicatorView: UIActivityIndicatorView!
-  private var hideKeyboard: (() -> Void)?
   
   public init(
     interactor: any SearchBusinessLogic,
@@ -36,67 +39,72 @@ public final class SearchViewController: BaseViewController {
   }
   
   private func build() {
-    let bottomAnchor = buildSearchField()
-    buildList(bottmAnchor: bottomAnchor)
+    self.searchField = buildSearchField()
+    layoutSearchField()
+    tableView = buildList()
+    dataSource = buildListDataSource(tableView: tableView)
+    layoutList()
+    indicatorView = buildIndicator()
+    view.backgroundColor = tableView.backgroundColor
   }
   
-  private func buildSearchField() -> NSLayoutYAxisAnchor {
+  private func buildSearchField() -> SearchTextField {
     let textField = SearchTextField()
     textField.delegate = self
-    textField.translatesAutoresizingMaskIntoConstraints = false
-    view.addSubview(textField)
-    NSLayoutConstraint.activate([
-      textField.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
-      textField.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
-      textField.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
-      textField.heightAnchor.constraint(equalToConstant: 60)
-    ])
     let action = UIAction { [weak self] action in
       if let textField = action.sender as? UITextField {
         self?.interactor.searchFieldChanged(textField.text)
       }
     }
     textField.addAction(action, for: .editingChanged)
-    hideKeyboard = { [weak textField] in
-      if let textField, textField.isFirstResponder {
-        textField.resignFirstResponder()
-      }
-    }
     
-    return textField.bottomAnchor
+    return textField
   }
   
-  private func buildList(bottmAnchor: NSLayoutYAxisAnchor) {
+  private func layoutSearchField() {
+    searchField.translatesAutoresizingMaskIntoConstraints = false
+    view.addSubview(searchField)
+    NSLayoutConstraint.activate([
+      searchField.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+      searchField.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
+      searchField.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
+      searchField.heightAnchor.constraint(equalToConstant: 60)
+    ])
+  }
+  
+  private func buildList() -> UITableView {
     let tableView = UITableView(frame: .zero, style: .insetGrouped)
-    buildListDataSource(tableView: tableView)
     tableView.register(type: SearchListRow.self)
     tableView.registerForHeaderFooterView(type: SearchListHeaderView.self)
     tableView.delegate = self
+    return tableView
+  }
+  
+  private func layoutList() {
     view.addSubview(tableView)
     tableView.translatesAutoresizingMaskIntoConstraints = false
-    buildIndicator(superView: tableView)
     NSLayoutConstraint.activate([
-      tableView.topAnchor.constraint(equalTo: bottmAnchor),
+      tableView.topAnchor.constraint(equalTo: searchField.bottomAnchor),
       tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
       tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
       tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
     ])
-    view.backgroundColor = tableView.backgroundColor
   }
   
-  private func buildIndicator(superView: UIView) {
+  private func buildIndicator() -> UIActivityIndicatorView {
     let indicatorView = UIActivityIndicatorView(style: .large)
-    superView.addSubview(indicatorView)
+    tableView.addSubview(indicatorView)
     indicatorView.translatesAutoresizingMaskIntoConstraints = false
     NSLayoutConstraint.activate([
-      indicatorView.centerXAnchor.constraint(equalTo: superView.centerXAnchor),
-      indicatorView.centerYAnchor.constraint(equalTo: superView.centerYAnchor, constant: -80)
+      indicatorView.centerXAnchor.constraint(equalTo: tableView.centerXAnchor),
+      indicatorView.centerYAnchor.constraint(equalTo: tableView.centerYAnchor, constant: -80)
     ])
-    self.indicatorView = indicatorView
+    
+    return indicatorView
   }
   
-  private func buildListDataSource(tableView: UITableView) {
-    datasource = .init(
+  private func buildListDataSource(tableView: UITableView) -> DataSource {
+    .init(
       tableView: tableView,
       cellProvider: { [weak self] tableView, indexPath, datum in
         guard let self else { return .init() }
@@ -129,7 +137,7 @@ extension SearchViewController: UITableViewDelegate {
     viewForHeaderInSection section: Int
   ) -> UIView? {
     let view = tableView.dequeueReusableHeaderFooterView(type: SearchListHeaderView.self)
-    let sectionType = datasource
+    let sectionType = dataSource
       .snapshot()
       .sectionIdentifiers[section]
     view?.build(
@@ -158,7 +166,7 @@ extension SearchViewController: UITableViewDelegate {
   }
   
   public func scrollViewDidScroll(_ scrollView: UIScrollView) {
-    hideKeyboard?()
+    searchField.resignFirstResponder()
   }
 }
 
@@ -181,23 +189,25 @@ extension SearchViewController: SearchDisplayLogic {
       items.forEach { key, value in
         snapShot.appendItems(value, toSection: key)
       }
-      indicatorView.stopAnimating()
     case .loading:
-      indicatorView.startAnimating()
+      break
     }
+    dataSource.apply(snapShot, animatingDifferences: false)
     
-    datasource.apply(snapShot, animatingDifferences: false)
+    viewModel == .loading
+    ? indicatorView.startAnimating()
+    : indicatorView.stopAnimating()
   }
   
   public func reloadSection(
     _ viewModel: [SearchFeature.RowData],
     section: SearchFeature.SectionType
   ) {
-    var snapshot = datasource.snapshot()
+    var snapshot = dataSource.snapshot()
     let items = snapshot.itemIdentifiers(inSection: section)
     snapshot.deleteItems(items)
     snapshot.appendItems(viewModel, toSection: section)
-    datasource.apply(snapshot, animatingDifferences: false)
+    dataSource.apply(snapshot, animatingDifferences: false)
   }
   
   public func presentAlert(message: String) {
@@ -207,7 +217,7 @@ extension SearchViewController: SearchDisplayLogic {
 
 private extension SearchViewController {
   func rowType(_ section: Int) -> SearchListRow.ViewType {
-    let sectionType = datasource.snapshot().sectionIdentifiers
+    let sectionType = dataSource.snapshot().sectionIdentifiers
     switch sectionType[section] {
     case .history, .coin, .nft, .exchange:
       return .primary
