@@ -273,7 +273,7 @@ private extension SearchFeature.RowData.Price {
 #if DEBUG
 @available(iOS 17.0, *)
 #Preview {
-  let builder = SearchSceneBuilder(dependency: .live)
+  let builder = SearchSceneBuilder(dependency: .preview)
   return builder.build()
 }
 #endif

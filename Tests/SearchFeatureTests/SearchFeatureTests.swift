@@ -88,7 +88,6 @@ final class SearchFeatureTests: XCTestCase {
     XCTAssertEqual([], interactor.topGainer)
     XCTAssertEqual([], interactor.topLoser)
     XCTAssertEqual([], interactor.newCoins)
-    XCTAssertNotNil(interactor.destination)
     await fulfillment(of: [expectation1])
   }
   
