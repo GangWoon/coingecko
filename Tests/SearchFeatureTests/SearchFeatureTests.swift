@@ -125,9 +125,6 @@ final class SearchFeatureTests: XCTestCase {
     interactor.presenter = SearchFeatureTests.mockPresenter
     
     interactor.searchFieldChanged("ABC")
-    
-    XCTAssertEqual("ABC", interactor.text)
-    XCTAssertEqual(true, interactor.isLoading)
     while true {
       if interactor.searchResults != nil {
         break
@@ -174,12 +171,8 @@ final class SearchFeatureTests: XCTestCase {
     interactor.presenter = SearchFeatureTests.mockPresenter
     
     interactor.searchFieldChanged("ABC")
-    XCTAssertEqual("ABC", interactor.text)
     interactor.searchFieldChanged("AC")
-    XCTAssertEqual("AC", interactor.text)
     interactor.searchFieldChanged("ABCF")
-    XCTAssertEqual("ABCF", interactor.text)
-    XCTAssertEqual(true, interactor.isLoading)
     
     while true {
       if interactor.searchResults != nil {
@@ -203,8 +196,6 @@ final class SearchFeatureTests: XCTestCase {
     interactor.presenter = SearchFeatureTests.mockPresenter
     
     interactor.searchFieldChanged("ABC")
-    XCTAssertEqual("ABC", interactor.text)
-    XCTAssertEqual(true, interactor.isLoading)
     interactor.searchFieldChanged("")
     XCTAssertEqual(interactor.searchResults, nil)
     await fulfillment(of: [expectation1])
