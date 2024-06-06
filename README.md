@@ -9,7 +9,7 @@ coingecko 카피 앱입니다.
 ## 구조
 - [Clean Swift](https://github.com/Clean-Swift/CleanStore?tab=readme-ov-file) <br>
 단방향 구조인 클린 스위프트 아키텍처를 사용해서 작성했습니다.
-<img width="873" alt="Screenshot 2024-06-06 at 15 55 19" src="https://github.com/GangWoon/coingecko/assets/48466830/4afdb321-3372-44bc-b553-b4f2c11aa3ed">
+<img width="818" alt="Screenshot 2024-06-06 at 15 59 22" src="https://github.com/GangWoon/coingecko/assets/48466830/270d66d0-b8b5-43dc-a388-eb8e2c629ef6">
 
 ### View
 화면을 꾸미는 역할을 담당합니다. Interactor로 메세지(Request)를 보내며 Presenter에게 ViewModel을 전달 받아서 화면을 갱신합니다.
