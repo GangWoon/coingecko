@@ -70,11 +70,9 @@ final class SearchFeatureTests: XCTestCase {
     SearchFeatureTests.mockWorker._loadSearchHistory = {
       throw _Error.unexpected
     }
-    SearchFeatureTests.mockPresenter._changeDestination = { destination in
-      if case let .alert(message: message) = destination {
-        XCTAssertEqual(_Error.unexpected.errorDescription, message)
-        expectation1.fulfill()
-      }
+    SearchFeatureTests.mockPresenter._presentAlert = {
+      XCTAssertEqual(_Error.unexpected.errorDescription, $0)
+      expectation1.fulfill()
     }
     
     let interactor = SearchInteractor(worker: SearchFeatureTests.mockWorker)
@@ -205,13 +203,9 @@ final class SearchFeatureTests: XCTestCase {
     SearchFeatureTests.mockPresenter._updateSection = { _ in
       expectation1.fulfill()
     }
-    let interactor = SearchInteractor(
-      state: .init(
-        trendingCoins: [.mock],
-        trendingNFTs: [.mock]
-      ),
-      worker: SearchFeatureTests.mockWorker
-    )
+    let interactor = SearchInteractor(worker: SearchFeatureTests.mockWorker)
+    interactor.trendingCoins = [.mock]
+    interactor.trendingNFTs = [.mock]
     interactor.presenter = SearchFeatureTests.mockPresenter
     
     interactor.categoryTapped(.init(indexPath: .init(row: 1, section: 0)))
@@ -297,7 +291,7 @@ extension SearchFeature.Category {
 struct MockPresenter: SearchPresentationLogic {
   var _updateList: ((SearchFeature.UpdateList.Response) -> Void)?
   var _updateSection: ((SearchFeature.UpdateList.ResponseType) -> Void)?
-  var _changeDestination: ((SearchFeature.Destination)-> Void)?
+  var _presentAlert: ((String)-> Void)?
   
   func updateList(_ response: SearchFeature.UpdateList.Response) {
     if let _updateList {
@@ -315,9 +309,9 @@ struct MockPresenter: SearchPresentationLogic {
     }
   }
   
-  func changeDestination(_ destination: SearchFeature.Destination) {
-    if let _changeDestination {
-      _changeDestination(destination)
+  func presentAlert(message: String) {
+    if let _presentAlert {
+      _presentAlert(message)
     } else {
       XCTFail()
     }
