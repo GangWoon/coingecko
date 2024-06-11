@@ -204,7 +204,12 @@ extension SearchViewController: SearchDisplayLogic {
     section: SearchFeature.SectionType
   ) {
     var snapshot = dataSource.snapshot()
+    guard
+      let index = snapshot.sectionIdentifiers.firstIndex(of: section)
+    else { return }
+    let section = snapshot.sectionIdentifiers[index]
     let items = snapshot.itemIdentifiers(inSection: section)
+    
     snapshot.deleteItems(items)
     snapshot.appendItems(viewModel, toSection: section)
     dataSource.apply(snapshot, animatingDifferences: false)
