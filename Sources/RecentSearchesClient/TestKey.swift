@@ -19,6 +19,7 @@ extension RecentSearchesClient {
     )
   }
   
+  @MainActor
   public static let error = Self(
     load: { throw _Error.synthetic },
     save: { _ in throw _Error.synthetic }

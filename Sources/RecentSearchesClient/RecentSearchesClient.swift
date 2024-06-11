@@ -23,7 +23,7 @@ public struct RecentSearch {
   }
 }
 
-public struct RecentSearchesClient {
+public struct RecentSearchesClient: Sendable {
   public var load: @Sendable () throws -> [RecentSearch]
   public var save: @Sendable (RecentSearch) throws -> Void
   

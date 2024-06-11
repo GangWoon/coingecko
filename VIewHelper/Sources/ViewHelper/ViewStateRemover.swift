@@ -1,3 +1,4 @@
+@MainActor
 public protocol ViewStateRemover: AnyObject {
   var viewStateRemover: [() -> ()?] { get set }
   func removeState()

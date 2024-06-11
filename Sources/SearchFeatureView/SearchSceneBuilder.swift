@@ -2,9 +2,10 @@ import RecentSearchesClientLive
 import ApiClientLive
 import SearchFeature
 
+@MainActor
 public struct SearchSceneBuilder {
   let dependency: Dependency
-  public struct Dependency {
+  public struct Dependency: Sendable {
     let worker: SearchWorkerInterface
     public init(work: SearchWorkerInterface) {
       self.worker = work
@@ -14,7 +15,7 @@ public struct SearchSceneBuilder {
   public init(dependency: Dependency = .live) {
     self.dependency = dependency
   }
-  
+
   public func build() -> SearchViewController {
     let interactor = SearchInteractor(worker: dependency.worker)
     let router = SearchRouter()
@@ -52,6 +53,7 @@ public extension SearchSceneBuilder.Dependency {
     )
   )
   
+  @MainActor
   static let error = Self(
     work: SearchWorker(
       apiClient: .error,

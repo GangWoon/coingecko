@@ -156,6 +156,7 @@ private extension SearchFeature.UpdateList.Response.Information.Highlight {
 }
 
 public extension SearchFeature.RowData {
+  nonisolated(unsafe)
   static let expanedRow = Self(name: "추가 코인 로드", fullname: "추가 코인 로드")
 }
 

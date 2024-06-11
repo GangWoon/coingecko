@@ -1,5 +1,6 @@
 #if canImport(Combine)
-import protocol Combine.Publisher
+@preconcurrency import protocol Combine.Publisher
+
 public extension Publisher {
   var stream: AsyncStream<Output> {
     AsyncStream<Output> { continuation in

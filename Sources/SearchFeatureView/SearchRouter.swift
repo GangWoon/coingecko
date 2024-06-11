@@ -1,5 +1,6 @@
 import UIKit
 
+@MainActor
 public protocol SearchRoutingLogic {
   func presentAlert(message: String)
 }

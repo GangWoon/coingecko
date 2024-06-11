@@ -3,7 +3,7 @@ import Foundation
 import CombineExt
 import Combine
 
-// MARK: - Read in View
+@MainActor
 public protocol SearchBusinessLogic {
   func prepare() async
   
@@ -12,6 +12,7 @@ public protocol SearchBusinessLogic {
   func tappedExpandRow()
 }
 
+@MainActor
 public final class SearchInteractor {
   private var textStream: CurrentValueSubject<String, Never> = .init("")
   
@@ -43,20 +44,11 @@ public final class SearchInteractor {
   
   private func run(
     id: AnyHashable = UUID(),
-    @_implicitSelfCapture work: @Sendable @escaping () async throws -> Void,
-    @_implicitSelfCapture errorHandler: @Sendable @escaping (Error) async -> Void = { _ in }
+    @_implicitSelfCapture work: @MainActor @Sendable @escaping () async throws -> Void,
+    @_implicitSelfCapture errorHandler: @MainActor @Sendable @escaping (Error) async -> Void = { _ in }
   ){
-    @Sendable func lock(_ work: @Sendable @escaping () -> Void) {
-      _lock.lock()
-      work()
-      _lock.unlock()
-    }
     let task = Task {
-      defer {
-        lock { [weak self] in
-          self?.cancellables[id] = nil
-        }
-      }
+      defer { cancellables[id] = nil }
       do {
         try await work()
       } catch {
@@ -64,10 +56,7 @@ public final class SearchInteractor {
         await errorHandler(error)
       }
     }
-    
-    lock { [weak self] in
-      self?.cancellables[id] = task
-    }
+    cancellables[id] = task
   }
 }
 
@@ -123,11 +112,10 @@ extension SearchInteractor: SearchBusinessLogic {
       topGainer = highlightResponse.topGainer
       topLoser = highlightResponse.topLoser
       newCoins = highlightResponse.newCoins
-      
-      await presenter?.updateList(updateListResponse)
+      presenter?.updateList(updateListResponse)
     } catch {
       guard !(error is CancellationError) else { return }
-      await presenter?.presentAlert(message: error.localizedDescription)
+      presenter?.presentAlert(message: error.localizedDescription)
     }
   }
   
@@ -140,7 +128,7 @@ extension SearchInteractor: SearchBusinessLogic {
     }
     buildTextStream()
     textStream.send(text)
-    run { await presenter?.updateList(.loading) }
+    run { presenter?.updateList(.loading) }
   }
   
   private func buildTextStream() {
@@ -164,12 +152,16 @@ extension SearchInteractor: SearchBusinessLogic {
       result.coins = Array(result.coins.prefix(5))
       result.nfts = Array(result.nfts.prefix(5))
       result.exchanges = Array(result.exchanges.prefix(5))
-      searchResults = result
+      update(result)
       try saveRecentSearch()
-      await presenter?.updateList(.search(result))
-    } errorHandler: { error in
-      await presenter?.presentAlert(message: error.localizedDescription)
+      presenter?.updateList(.search(result))
+    } errorHandler: { @MainActor error in
+      presenter?.presentAlert(message: error.localizedDescription)
     }
+  }
+  
+  private func update(_ response: SearchFeature.SearchApi.Response) {
+    self.searchResults = response
   }
   
   private func saveRecentSearch() throws {
@@ -189,7 +181,7 @@ extension SearchInteractor: SearchBusinessLogic {
     cancellables[id]?.cancel()
     cancellables[id] = nil
     searchResults = nil
-    run { await presenter?.updateList(updateListResponse) }
+    run { presenter?.updateList(updateListResponse) }
   }
   
   public func categoryTapped(_ request: SearchFeature.CategoryTapped.Request) {
@@ -200,7 +192,7 @@ extension SearchInteractor: SearchBusinessLogic {
       updateTrendingSection()
     case .highlight:
       selectedHighlightCategory = .init(rawValue: request.indexPath.row) ?? selectedHighlightCategory
-      run { await presenter?.updateSection(.highlight(updateHighlight)) }
+      run { presenter?.updateSection(.highlight(updateHighlight)) }
     default:
       break
     }
@@ -212,7 +204,7 @@ extension SearchInteractor: SearchBusinessLogic {
   }
   
   private func updateTrendingSection() {
-    run { await presenter?.updateSection(.trending(updateTrending)) }
+    run { presenter?.updateSection(.trending(updateTrending)) }
   }
 }
 

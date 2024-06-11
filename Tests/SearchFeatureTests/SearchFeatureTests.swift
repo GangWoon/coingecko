@@ -1,17 +1,19 @@
 @testable import SearchFeature
 import XCTest
 
-@MainActor
 final class SearchFeatureTests: XCTestCase {
-  static var mockWorker: MockWorker = .init()
-  static var mockPresenter: MockPresenter = .init()
+  @MainActor static var mockWorker: MockWorker = .init()
+  @MainActor static var mockPresenter: MockPresenter = .init()
   
   override class func tearDown() {
     super.tearDown()
-    mockWorker = .init()
-    mockPresenter = .init()
+    Task { @MainActor in
+      mockWorker = .init()
+      mockPresenter = .init()
+    }
   }
   
+  @MainActor
   func testPrepareHappyFlow() async throws {
     let expectation1 = XCTestExpectation(description: "Load Search History")
     let expectation2 = XCTestExpectation(description: "Get Trending")
@@ -65,6 +67,7 @@ final class SearchFeatureTests: XCTestCase {
     await fulfillment(of: [expectation1, expectation2, expectation3, expectation4])
   }
   
+  @MainActor
   func testPrepareUnHappyFlow() async {
     let expectation1 = XCTestExpectation(description: "Change Destination")
     SearchFeatureTests.mockWorker._loadSearchHistory = {
@@ -89,6 +92,7 @@ final class SearchFeatureTests: XCTestCase {
     await fulfillment(of: [expectation1])
   }
   
+  @MainActor
   func testSearchFieldChangeHappyFlow() async throws {
     let expectation1 = expectation(description: "Search")
     let expectation2 = expectation(description: "Save Search History")
@@ -133,6 +137,7 @@ final class SearchFeatureTests: XCTestCase {
     await fulfillment(of: [expectation1, expectation2, expectation3, expectation4])
   }
   
+  @MainActor
   func testSearchFieldChangeDebounceFlow() async throws {
     let expectation1 = expectation(description: "Search")
     let expectation2 = expectation(description: "UpdateList Loading Data")
@@ -182,6 +187,7 @@ final class SearchFeatureTests: XCTestCase {
     await fulfillment(of: [expectation1, expectation2,  expectation3, expectation4])
   }
   
+  @MainActor
   func testSearchFieldChangeCancelFlow() async throws {
     let expectation1 = expectation(description: "Update List")
     SearchFeatureTests.mockPresenter._updateList = { response in
@@ -198,6 +204,7 @@ final class SearchFeatureTests: XCTestCase {
     await fulfillment(of: [expectation1])
   }
   
+  @MainActor
   func testCategoryTapped() async throws {
     let expectation1 = expectation(description: "Update Section")
     SearchFeatureTests.mockPresenter._updateSection = { _ in
@@ -214,6 +221,7 @@ final class SearchFeatureTests: XCTestCase {
     await fulfillment(of: [expectation1])
   }
   
+  @MainActor
   func testExpandRowTapped() async throws {
     let expectation1 = expectation(description: "Update Section")
     SearchFeatureTests.mockPresenter._updateSection = { _ in
@@ -318,12 +326,12 @@ struct MockPresenter: SearchPresentationLogic {
   }
 }
 
-struct MockWorker: SearchWorkerInterface {
-  var _loadSearchHistory: (() throws -> [SearchFeature.SearchApi.Response.Item])?
-  var _saveSearchHistory: ((SearchFeature.SearchApi.Response.Item) throws -> Void)?
-  var _getTrending: (() async throws -> SearchFeature.FetchTrending.Response)?
-  var _getHighlight: (() async throws -> SearchFeature.FetchHighlight.Response)?
-  var _search: ((SearchFeature.SearchApi.Request) async throws -> SearchFeature.SearchApi.Response)?
+struct MockWorker: SearchWorkerInterface, Sendable {
+  var _loadSearchHistory: (@Sendable () throws -> [SearchFeature.SearchApi.Response.Item])?
+  var _saveSearchHistory: (@Sendable (SearchFeature.SearchApi.Response.Item) throws -> Void)?
+  var _getTrending: (@Sendable () async throws -> SearchFeature.FetchTrending.Response)?
+  var _getHighlight: (@Sendable () async throws -> SearchFeature.FetchHighlight.Response)?
+  var _search: (@Sendable (SearchFeature.SearchApi.Request) async throws -> SearchFeature.SearchApi.Response)?
   
   func loadSearchHistory() throws -> [SearchFeature.SearchApi.Response.Item] {
     if let _loadSearchHistory {

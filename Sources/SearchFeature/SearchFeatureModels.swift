@@ -4,7 +4,7 @@ import Foundation
 /// 개념을 분리시키는 단위가 명확하지 않기 때문에 어색함을 많이 느낍니다.
 public enum SearchFeature {
   public enum FetchTrending {
-    public struct Response: Equatable {
+    public struct Response: Equatable, Sendable {
       static let empty = Self(coins: [], nfts: [], categories: [])
       var coins: [Coin]
       var nfts: [NFT]
@@ -13,7 +13,7 @@ public enum SearchFeature {
   }
   
   public enum FetchHighlight {
-    public struct Response: Equatable {
+    public struct Response: Equatable, Sendable {
       static let empty = Self(topGainer: [], topLoser: [], newCoins: [])
       public var topGainer: [Coin]
       public var topLoser: [Coin]
@@ -26,8 +26,8 @@ public enum SearchFeature {
       var query: String
     }
     
-    public struct Response: Equatable {
-      public struct Item: Equatable {
+    public struct Response: Equatable, Sendable {
+      public struct Item: Equatable, Sendable {
         var thumb: String
         var symbol: String
         var name: String?
@@ -93,7 +93,7 @@ public enum SearchFeature {
 }
 
 extension SearchFeature {
-  public struct Coin: Equatable {
+  public struct Coin: Equatable, Sendable {
     public var id: String
     public var coinId: Int?
     public var name: String
@@ -124,7 +124,7 @@ extension SearchFeature {
     }
   }
   
-  public struct NFT: Equatable {
+  public struct NFT: Equatable, Sendable {
     public var id: String
     public var name: String
     public var symbol: String
@@ -149,7 +149,7 @@ extension SearchFeature {
     }
   }
   
-  public struct Category: Equatable {
+  public struct Category: Equatable, Sendable {
     public var id: Int
     public var name: String
     public var marketCap1HChange: Double
@@ -171,14 +171,14 @@ extension SearchFeature {
 /// 의미를 갖는 형태로 구체화해서 전달하는게 좋은 느낌을 받았습니다.
 /// 하지만 이런 이유 때문에 View에서 사용되는 데이터가 로직을 모아두는 곳에 존재해서 어색한 느낌을 받습니다.
 extension SearchFeature {
-  public struct RowData: Hashable, Identifiable {
+  public struct RowData: Hashable, Identifiable, Sendable {
     public let id: UUID = .init()
     public let rank: Int?
     public let imageUrl: String?
     public let name: String
     public let fullname: String
     public let price: Price?
-    public struct Price: Hashable {
+    public struct Price: Hashable, Sendable {
       public let current: Double
       public let change24h: Double
     }
@@ -198,7 +198,7 @@ extension SearchFeature {
     }
   }
   
-  public enum SectionType: Comparable, Hashable, Equatable {
+  public enum SectionType: Comparable, Hashable, Equatable, Sendable {
     public var title: String {
       switch self {
       case .history:
