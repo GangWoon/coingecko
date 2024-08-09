@@ -26,6 +26,7 @@ Interactor로 부터 전달 받은 상태 값을(Response) View에서 사용할 
 **V - I - P** 관계는 protocol로 추상화 되있으며, [Builder](https://github.com/GangWoon/coingecko/blob/abfa0a3d75bcc3470c9058ad78728e5ba34ab8c9/Sources/SearchFeatureView/SearchSceneBuilder.swift#L19-L29)를 통해서 하나의 사이클로 만들었습니다.
 
 ## 구현 화면
+[YouTube](https://youtube.com/shorts/c9Zsf25qFrs?feature=share)
 <div style="text-align: center;">
   <img src="https://github.com/GangWoon/coingecko/assets/48466830/aa42a99a-74c5-41b9-9f7f-a6f968b41514" style="width:700px;">
 </div>
